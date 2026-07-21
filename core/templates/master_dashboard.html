@@ -1,0 +1,52 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    <title>Главная</title>
+    <style>
+        body { font-family: 'Manrope', sans-serif; margin: 20px; background-color: #f9f9f9; }
+        h1 { color: #333; }
+        table { width: 100%; border-collapse: collapse; background-color: #fff; margin-top: 20px; }
+        th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
+        th { background-color: #007bff; color: white; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+        .hidden-badge { color: #d9534f; font-weight: bold; }
+        .visible-badge { color: #5cb85c; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <table>
+        <thead>
+            <tr>
+                <th>Номер</th>
+                <th>Название</th>
+                <th>Адрес</th>
+                <th>Заказчик</th>
+                <th>Состояние</th>
+                <th>Статус видимости</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for obj in objects %}
+            <tr>
+                <td><strong>{{ obj.number }}</strong></td>
+                <td>{{ obj.title }}</td>
+                <td>{{ obj.address }}</td>
+                <td>{{ obj.client.title }}</td>
+                <td>{{ obj.status.title }}</td>
+                <td>
+                    {% if obj.is_hidden %}
+                        <span class="hidden-badge">Скрыт</span>
+                    {% else %}
+                        <span class="visible-badge">Активен</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+</body>
+</html>
