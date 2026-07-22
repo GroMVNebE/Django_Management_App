@@ -1,0 +1,449 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Импорт объектов</title>
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    <style>
+        body {
+            font-family: 'Manrope', sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 40px 20px;
+            color: #1e293b;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 32px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        /* Навигационная панель */
+        .navbar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 2px solid #f1f5f9;
+            padding-bottom: 16px;
+            margin-bottom: 32px;
+        }
+
+        .nav-link {
+            padding: 8px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            color: #64748b;
+            transition: all 0.2s ease;
+        }
+
+        .nav-link:hover {
+            color: #1e293b;
+            background-color: #f1f5f9;
+        }
+
+        .nav-link.active {
+            color: #2563eb;
+            background-color: #eff6ff;
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-top: 0;
+            margin-bottom: 8px;
+        }
+
+        p.subtitle {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .alert-error {
+            background-color: #fde8e8;
+            color: #9b1c1c;
+            border: 1px solid #f8b4b4;
+        }
+
+        .alert-success {
+            background-color: #def7ec;
+            color: #03543f;
+            border: 1px solid #84e1bc;
+        }
+
+        .file-drop-area {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            border: 2px dashed #cbd5e1;
+            border-radius: 8px;
+            background-color: #f8fafc;
+            transition: border-color 0.2s ease, background-color 0.2s ease;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .file-drop-area:hover, .file-drop-area.is-active {
+            border-color: #2563eb;
+            background-color: #eff6ff;
+        }
+
+        .file-drop-area input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .file-msg {
+            font-size: 14px;
+            color: #475569;
+            margin-top: 8px;
+        }
+
+        .file-name {
+            font-weight: 600;
+            color: #2563eb;
+            margin-top: 10px;
+            word-break: break-all;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            text-decoration: none;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.2s;
+        }
+
+        .btn-primary {
+            background-color: #2563eb;
+            color: #ffffff;
+            flex: 1;
+        }
+
+        .btn-primary:hover {
+            background-color: #1d4ed8;
+        }
+
+        .btn-secondary {
+            background-color: #e2e8f0;
+            color: #334155;
+        }
+
+        .btn-secondary:hover {
+            background-color: #cbd5e1;
+        }
+
+        /* Карточка результатов */
+        .results-section {
+            margin-top: 32px;
+            border-top: 2px solid #f1f5f9;
+            padding-top: 24px;
+        }
+
+        .results-section h2 {
+            font-size: 20px;
+            margin-bottom: 16px;
+        }
+
+        .object-card {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .object-info h3 {
+            margin: 0 0 4px 0;
+            font-size: 16px;
+            color: #1e293b;
+        }
+
+        .object-info p {
+            margin: 0;
+            font-size: 14px;
+            color: #64748b;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        .products-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .products-table th {
+            background-color: #f1f5f9;
+            color: #475569;
+            text-align: left;
+            padding: 10px 14px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .products-table td {
+            padding: 10px 14px;
+            border-bottom: 1px solid #e2e8f0;
+            color: #334155;
+        }
+
+        .products-table tr:hover {
+            background-color: #f8fafc;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        /* ===================================================
+           АДАПТИВНЫЙ ДИЗАЙН ДЛЯ СМАРТФОНОВ И МАНЕНЬКИХ ЭКРАНОВ
+           =================================================== */
+        @media (max-width: 640px) {
+            body {
+                padding: 16px 12px;
+            }
+
+            .container {
+                padding: 20px 16px;
+                border-radius: 12px;
+            }
+
+            .navbar {
+                gap: 6px;
+                margin-bottom: 20px;
+                padding-bottom: 12px;
+            }
+
+            .nav-link {
+                padding: 8px 12px;
+                font-size: 13px;
+                text-align: center;
+                flex: 1;
+            }
+
+            h1 {
+                font-size: 20px;
+            }
+
+            p.subtitle {
+                font-size: 13px;
+                margin-bottom: 16px;
+            }
+
+            .file-drop-area {
+                padding: 24px 12px;
+            }
+
+            .btn-group {
+                flex-direction: column-reverse;
+                gap: 8px;
+            }
+
+            .btn {
+                width: 100%;
+                box-sizing: border-box;
+            }
+
+            .object-card {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            /* Превращаем таблицу импортированных продуктов в карточки */
+            .products-table thead {
+                display: none;
+            }
+
+            .products-table, 
+            .products-table tbody, 
+            .products-table tr, 
+            .products-table td {
+                display: block;
+                width: 100%;
+                box-sizing: border-box;
+            }
+
+            .products-table tr {
+                margin-bottom: 12px;
+                background-color: #f8fafc;
+                border: 1px solid #e2e8f0;
+                border-radius: 8px;
+                padding: 12px 14px;
+            }
+
+            .products-table td {
+                padding: 4px 0;
+                border: none;
+                text-align: left !important;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .products-table td::before {
+                content: attr(data-label);
+                font-weight: 600;
+                color: #64748b;
+                font-size: 12px;
+                text-transform: uppercase;
+                margin-right: 8px;
+            }
+
+            .products-table td:first-child {
+                border-bottom: 1px solid #e2e8f0;
+                padding-bottom: 8px;
+                margin-bottom: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <nav class="navbar">
+        <a href="{% url 'master_dashboard' %}" class="nav-link">Объекты</a>
+        <a href="{% url 'import_objects' %}" class="nav-link active">Импорт объектов</a>
+    </nav>
+    
+    <h1>Импорт объектов</h1>
+    <p class="subtitle">Загрузите файл Excel (.xlsx, .xlsm, .xls), содержащий спецификацию</p>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}error{% else %}success{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <div class="file-drop-area" id="drop-zone">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            <span class="file-msg">Выберите Excel-файл</span>
+            <div class="file-name" id="file-name"></div>
+            <input type="file" name="excel_file" id="file-input" accept=".xlsx, .xlsm, .xsl" required>
+        </div>
+
+        <div class="btn-group">
+            <a href="{% url 'master_dashboard' %}" class="btn btn-secondary">Отмена</a>
+            <button type="submit" class="btn btn-primary">Начать импорт</button>
+        </div>
+    </form>
+
+    {% if products %}
+    <div class="results-section">
+        <h2>Импортированные данные</h2>
+        
+        <div class="object-card">
+            <div class="object-info">
+                <h3>Объект № {{ object.number }}</h3>
+                <p>Всего позиций импортировано: 
+                    <strong>{{ products.count }}</strong>
+                </p>
+            </div>
+        </div>
+
+        <div class="table-wrapper">
+            <table class="products-table">
+                <thead>
+                    <tr>
+                        <th>№ изделия</th>
+                        <th>Наименование</th>
+                        <th>Часть</th>
+                        <th class="text-center">Кол-во</th>
+                        <th class="text-right">Оплата</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in products %}
+                    <tr>
+                        <td data-label="№ изделия"><strong>{{ product.product_number }}</strong></td>
+                        <td data-label="Наименование">{{ product.title }}</td>
+                        <td data-label="Часть">{{ product.part_name|default:"—" }}</td>
+                        <td data-label="Кол-во" class="text-center">{{ product.quantity }}</td>
+                        <td data-label="Оплата" class="text-right"><strong>{{ product.payment }} ₽</strong></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    const fileInput = document.getElementById('file-input');
+    const fileNameDiv = document.getElementById('file-name');
+    const dropZone = document.getElementById('drop-zone');
+
+    fileInput.addEventListener('change', function() {
+        if (this.files && this.files[0]) {
+            fileNameDiv.textContent = 'Выбран файл: ' + this.files[0].name;
+        } else {
+            fileNameDiv.textContent = '';
+        }
+    });
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => dropZone.classList.add('is-active'), false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => dropZone.classList.remove('is-active'), false);
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,368 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Объект № {{ object.number }} — Детали</title>
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    <style>
+        body {
+            font-family: 'Manrope', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+            margin: 0;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+        }
+
+        .navbar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 2px solid #f1f5f9;
+            padding-bottom: 16px;
+            margin-bottom: 32px;
+        }
+
+        .nav-link {
+            padding: 8px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            color: #64748b;
+            transition: all 0.2s ease;
+        }
+
+        .nav-link:hover {
+            color: #1e293b;
+            background-color: #f1f5f9;
+        }
+
+        .nav-link.active {
+            color: #2563eb;
+            background-color: #eff6ff;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        .alert-error { background-color: #fde8e8; color: #9b1c1c; border: 1px solid #f8b4b4; }
+        .alert-success { background-color: #def7ec; color: #03543f; border: 1px solid #84e1bc; }
+        .alert-info { background-color: #e1effe; color: #1e429f; border: 1px solid #b4c6fc; }
+
+        header {
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 9px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-success { background-color: #16a34a; color: #ffffff; }
+        .btn-success:hover { background-color: #15803d; }
+
+        .btn-warning { background-color: #f59e0b; color: #ffffff; }
+        .btn-warning:hover { background-color: #d97706; }
+
+        .btn-danger { background-color: #dc2626; color: #ffffff; }
+        .btn-danger:hover { background-color: #b91c1c; }
+
+        h1 {
+            font-size: 26px;
+            font-weight: 800;
+            margin: 0;
+            letter-spacing: -0.02em;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .status-queued { background-color: #f1f5f9; color: #475569; }
+        .status-in_progress { background-color: #fef3c7; color: #d97706; }
+        .status-completed { background-color: #dcfce7; color: #15803d; }
+
+        .product-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            background-color: #ffffff;
+        }
+
+        .product-header {
+            background-color: #f8fafc;
+            padding: 16px 20px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .product-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0;
+        }
+
+        .product-meta {
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .items-table th {
+            text-align: left;
+            padding: 10px 20px;
+            background-color: #ffffff;
+            color: #64748b;
+            font-size: 12px;
+            text-transform: uppercase;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .items-table td {
+            padding: 12px 20px;
+            border-bottom: 1px solid #f1f5f9;
+            color: #334155;
+        }
+
+        .items-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .no-items {
+            padding: 16px 20px;
+            color: #94a3b8;
+            font-size: 14px;
+            font-style: italic;
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding: 16px 12px;
+            }
+
+            .container {
+                padding: 20px 16px;
+                border-radius: 12px;
+            }
+
+            .navbar {
+                gap: 6px;
+                margin-bottom: 20px;
+            }
+
+            .nav-link {
+                padding: 8px 12px;
+                font-size: 13px;
+                text-align: center;
+                flex: 1;
+            }
+
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .header-actions {
+                width: 100%;
+                flex-direction: column;
+            }
+            .header-actions form, .header-actions .btn {
+                width: 100%;
+            }
+
+            h1 {
+                font-size: 22px;
+            }
+
+            .items-table thead {
+                display: none;
+            }
+
+            .items-table, 
+            .items-table tbody, 
+            .items-table tr, 
+            .items-table td {
+                display: block;
+                width: 100%;
+                box-sizing: border-box;
+            }
+
+            .items-table tr {
+                border-bottom: 1px solid #e2e8f0;
+                padding: 12px 16px;
+            }
+
+            .items-table td {
+                padding: 4px 0;
+                border: none;
+                display: flex;
+                justify-content: space-between;
+            }
+
+            .items-table td::before {
+                content: attr(data-label);
+                font-weight: 600;
+                color: #64748b;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <nav class="navbar">
+        <a href="{% url 'master_dashboard' %}" class="nav-link">← Назад к объектам</a>
+    </nav>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}error{% elif message.tags == 'info' %}info{% else %}success{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <header>
+        <div>
+            <h1>Объект № {{ object }}</h1>
+        </div>
+
+        <div class="header-actions">
+            <form method="post" action="{% url 'toggle_object_status' object.id %}">
+                {% csrf_token %}
+                {% if is_in_work %}
+                    <button type="submit" class="btn btn-warning">
+                        Перевести в очередь
+                    </button>
+                {% else %}
+                    <button type="submit" class="btn btn-success">
+                        Ввести в работу
+                    </button>
+                {% endif %}
+            </form>
+
+            {% if not has_product_items %}
+                <form method="post" action="{% url 'delete_object' object.id %}" onsubmit="return confirm('Вы уверены, что хотите удалить объект № {{ object }}?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        Удалить объект
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+    </header>
+
+    {% if products %}
+        {% for product in products %}
+        <div class="product-card">
+            <div class="product-header">
+                <div>
+                    <h3 class="product-title">
+                        {{ product.product_number }} — {{ product.title }}
+                        {% if product.part_name %}({{ product.part_name }}){% endif %}
+                    </h3>
+                </div>
+                <div class="product-meta">
+                    Кол-во: <strong>{{ product.quantity }} шт.</strong> | Оплата: <strong>{{ product.payment }} ₽</strong>
+                </div>
+            </div>
+
+            {% if product.items.all %}
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th>Кол-во</th>
+                        <th>Работник</th>
+                        <th>Статус</th>
+                        <th>Дата начала</th>
+                        <th>Дата окончания</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in product.items.all %}
+                    <tr>
+                        <td data-label="Кол-во">{{ item.quantity }} шт.</td>
+                        <td data-label="Работник">
+                            {% if item.employee %}
+                                {{ item.employee.full_name }}
+                            {% else %}
+                                <span style="color: #94a3b8;">Не назначен</span>
+                            {% endif %}
+                        </td>
+                        <td data-label="Статус">
+                            <span class="status-badge status-{{ item.status }}">
+                                {{ item.get_status_display }}
+                            </span>
+                        </td>
+                        <td data-label="Начало">
+                            {{ item.start_time|date:"d.m.Y H:i"|default:"—" }}
+                        </td>
+                        <td data-label="Окончание">
+                            {{ item.end_time|date:"d.m.Y H:i"|default:"—" }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+        </div>
+        {% endfor %}
+    {% else %}
+        <p style="color: #64748b; text-align: center; padding: 40px 0;">В данном объекте нет изделий</p>
+    {% endif %}
+</div>
+
+</body>
+</html>

@@ -2,5 +2,15 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('', views.master_dashboard, name='master_dashboard'),
+    path('', views.index),
+    path('master', views.master_dashboard, name='master_dashboard'),
+    path('master/import/', views.import_objects_view, name='import_objects'),
+    path('master/object/<str:hashed_id>/',
+         views.object_detail_view, name='object_detail'),
+    path('master/object/<int:object_id>/toggle-status/',
+         views.toggle_object_status_view, name='toggle_object_status'),
+    path('master/object/<int:object_id>/delete/',
+         views.delete_object_view, name='delete_object'),
+    path('login/', views.login_view, name='login'),
+    path('logout/', views.logout_view, name='logout'),
 ]

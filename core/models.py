@@ -1,6 +1,8 @@
 from django.db import models
 from django.conf import settings
 from django.core.validators import MinValueValidator
+from django.urls import reverse
+from .utils import encode_id
 from decimal import Decimal
 
 
@@ -44,16 +46,17 @@ class ObjectStatus(models.Model):
 
 class Object(models.Model):
     """Модель объекта"""
-    title = models.CharField(max_length=255, verbose_name="Название")
-    address = models.TextField(verbose_name="Адрес")
+    title = models.CharField(
+        max_length=255, verbose_name="Название", blank=True)
+    address = models.TextField(verbose_name="Адрес", blank=True)
     number = models.CharField(
         max_length=16,
         verbose_name="Номер (пр. 1234-56)"
     )
-    status = models.ForeignKey(
+    status = models.ManyToManyField(
         ObjectStatus,
-        on_delete=models.PROTECT,
-        related_name='objects',
+        related_name='linked_objects',
+        blank=True,
         verbose_name="Состояние объекта"
     )
     is_hidden = models.BooleanField(default=False, verbose_name="Скрыт")
@@ -61,10 +64,17 @@ class Object(models.Model):
         Client,
         on_delete=models.SET_NULL,
         null=True,
-        related_name='objects',
+        related_name='linked_objects',
         verbose_name="Заказчик"
     )
     description = models.TextField(blank=True, verbose_name="Описание")
+
+    @property
+    def hashid(self):
+        return encode_id(self.pk)
+
+    def get_absolute_url(self):
+        return reverse('object_detail', kwargs={'hashed_id': self.hashid})
 
     def __str__(self):
         return f"{self.number} {self.title}"
@@ -78,6 +88,8 @@ class Product(models.Model):
         related_name='products',
         verbose_name="Объект"
     )
+    product_number = models.CharField(
+        max_length=32, verbose_name="Номер изделия")
     title = models.CharField(max_length=255, verbose_name="Название изделия")
     part_name = models.CharField(
         max_length=255,
@@ -95,8 +107,8 @@ class Product(models.Model):
 
     def __str__(self):
         if self.part_name:
-            return f"{self.title} {self.part_name}"
-        return self.title
+            return f"{self.product_number} {self.title} {self.part_name}"
+        return f"{self.product_number} {self.title}"
 
 
 class Employee(models.Model):
@@ -155,3 +167,12 @@ class ProductItem(models.Model):
 
     def __str__(self):
         return f"{self.product} {self.employee}"
+
+
+class ParsingBlacklist(models.Model):
+    """Запись в чёрном списке для парсинга"""
+    value = models.CharField(
+        max_length=255, verbose_name="Значение в чёрном списке")
+
+    def __str__(self):
+        return self.value
