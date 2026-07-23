@@ -1,12 +1,14 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.http import Http404
+from django.utils import timezone
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.views.decorators.http import require_POST
 from django.core.exceptions import ValidationError
-from django.db.models import Sum, F, FloatField, ExpressionWrapper, Value
+from django.db.models import Sum, F, FloatField, ExpressionWrapper, Value, DecimalField
 from django.db.models.functions import Coalesce
+from decimal import Decimal
 from .models import Object, Product, ParsingBlacklist, ObjectStatus, ProductItem
 from .utils import parse_spec, decode_id
 
@@ -19,12 +21,38 @@ def is_worker(user):
     return user.groups.filter(name='worker').exists()
 
 
+def login_view(request):
+    """Представление для входа пользователей"""
+    if request.user.is_authenticated:
+        return redirect('master_dashboard')
+
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            next_url = request.GET.get('next', 'index')
+            return redirect(next_url)
+        else:
+            messages.error(request, 'Неверное имя пользователя или пароль.')
+
+    return render(request, 'login.html')
+
+
+def logout_view(request):
+    """Выход из системы"""
+    logout(request)
+    return redirect('login')
+
+
 @login_required
 def index(request):
     if is_master(request.user):
         return redirect('master_dashboard')
     elif is_worker(request.user):
-        return redirect('worker')
+        return redirect('employee_dashboard')
     else:
         return redirect('login')
 
@@ -170,7 +198,7 @@ def delete_object_view(request, object_id):
 @login_required
 @user_passes_test(is_master, login_url='')
 def object_detail_view(request, hashed_id):
-    """Страница деталей объекта со списком изделий и их экземпляров."""
+    """Страница деталей объекта со списком изделий и их экземпляров"""
     object_id = decode_id(hashed_id)
     if object_id is None:
         raise Http404("Объект не найден")
@@ -194,27 +222,119 @@ def object_detail_view(request, hashed_id):
     return render(request, 'object_detail.html', context)
 
 
-def login_view(request):
-    """Представление для входа пользователей"""
-    if request.user.is_authenticated:
-        return redirect('master_dashboard')
+@login_required
+@user_passes_test(is_worker, login_url='')
+@require_POST
+def start_queued_item(request, item_id):
+    """Взять в работу экземпляр изделия из очереди"""
+    item = get_object_or_404(
+        ProductItem,
+        pk=item_id,
+        status=ProductItem.StatusChoices.QUEUED,
+        employee__user=request.user
+    )
 
-    if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
+    existing_in_progress_item = ProductItem.objects.filter(
+        product=item.product,
+        employee=item.employee,
+        status=ProductItem.StatusChoices.IN_PROGRESS
+    ).first()
 
-        user = authenticate(request, username=username, password=password)
-        if user is not None:
-            login(request, user)
-            next_url = request.GET.get('next', 'master_dashboard')
-            return redirect(next_url)
-        else:
-            messages.error(request, 'Неверное имя пользователя или пароль.')
+    if existing_in_progress_item:
+        existing_in_progress_item.quantity += item.quantity
+        existing_in_progress_item.save()
+        item.delete()
+    else:
+        item.status = ProductItem.StatusChoices.IN_PROGRESS
+        item.start_time = timezone.now()
+        item.save()
 
-    return render(request, 'login.html')
+    messages.success(request, f'Изделие "{item.product}" взято в работу')
+    return redirect('employee_dashboard')
 
 
-def logout_view(request):
-    """Выход из системы"""
-    logout(request)
-    return redirect('login')
+@login_required
+@user_passes_test(is_worker, login_url='')
+@require_POST
+def start_product_item(request, product_id):
+    """Создать новый экземпляр изделия и взять его в работу"""
+    product = get_object_or_404(Product, pk=product_id)
+
+    employee = getattr(request.user, 'employee_profile', None)
+    if not employee:
+        messages.error(request, 'Профиль работника не найден')
+        return redirect('employee_dashboard')
+
+    try:
+        quantity = Decimal(request.POST.get('quantity', '1.0'))
+    except (ValueError, TypeError):
+        messages.error(request, 'Указано некорректное количество')
+        return redirect('employee_dashboard')
+
+    available_qty = product.available_quantity
+    if quantity <= 0:
+        messages.error(request, 'Количество должно быть больше 0')
+        return redirect('employee_dashboard')
+
+    if quantity > available_qty:
+        messages.error(
+            request, f'Указанное количество ({quantity}) превышает доступный остаток ({available_qty})')
+        return redirect('employee_dashboard')
+
+    existing_in_progress_item = ProductItem.objects.filter(
+        product=product,
+        employee=employee,
+        status=ProductItem.StatusChoices.IN_PROGRESS
+    ).first()
+
+    if existing_in_progress_item:
+        existing_in_progress_item.quantity += quantity
+        existing_in_progress_item.save()
+    else:
+        ProductItem.objects.create(
+            product=product,
+            quantity=quantity,
+            status=ProductItem.StatusChoices.IN_PROGRESS,
+            start_time=timezone.now(),
+            employee=employee
+        )
+
+    messages.success(
+        request, f'Изделие "{product}" взято в работу ({quantity} шт.)')
+    return redirect('employee_dashboard')
+
+
+@login_required
+@user_passes_test(is_worker, login_url='')
+def employee_dashboard(request):
+    """Страница рабочего: список изделий в работе и в очереди"""
+
+    in_work_objects = Object.objects.filter(status__title="В работе")
+
+    available_products = Product.objects.filter(
+        object__in=in_work_objects
+    ).annotate(
+        used_quantity=Coalesce(
+            Sum('items__quantity'),
+            Value(Decimal('0.0')),
+            output_field=DecimalField()
+        )
+    ).annotate(
+        calculated_available_quantity=ExpressionWrapper(
+            F('quantity') - F('used_quantity'),
+            output_field=DecimalField()
+        )
+    ).filter(
+        calculated_available_quantity__gt=0
+    ).select_related('object').order_by('product_number')
+
+    queued_items = ProductItem.objects.filter(
+        status=ProductItem.StatusChoices.QUEUED,
+        employee__user=request.user
+    ).select_related('product', 'product__object', 'employee')
+
+    context = {
+        'available_products': available_products,
+        'queued_items': queued_items,
+    }
+    return render(request, 'employee_dashboard.html', context)

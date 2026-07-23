@@ -2,7 +2,9 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('', views.index),
+    path('', views.index, name='index'),
+    path('login/', views.login_view, name='login'),
+    path('logout/', views.logout_view, name='logout'),
     path('master', views.master_dashboard, name='master_dashboard'),
     path('master/import/', views.import_objects_view, name='import_objects'),
     path('master/object/<str:hashed_id>/',
@@ -11,6 +13,9 @@ urlpatterns = [
          views.toggle_object_status_view, name='toggle_object_status'),
     path('master/object/<int:object_id>/delete/',
          views.delete_object_view, name='delete_object'),
-    path('login/', views.login_view, name='login'),
-    path('logout/', views.logout_view, name='logout'),
+    path('employee/', views.employee_dashboard, name='employee_dashboard'),
+    path('employee/item/<int:item_id>/start/',
+         views.start_queued_item, name='start_queued_item'),
+    path('employee/product/<int:product_id>/start/',
+         views.start_product_item, name='start_product_item'),
 ]

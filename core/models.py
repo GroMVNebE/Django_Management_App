@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Sum
 from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.urls import reverse
@@ -105,10 +106,23 @@ class Product(models.Model):
         verbose_name="Оплата"
     )
 
+    @property
+    def available_quantity(self):
+        """Оставшееся доступное количество изделия для изготовления"""
+        used_qty = self.items.aggregate(
+            total=Sum('quantity')
+        )['total'] or Decimal('0.0')
+
+        remaining = Decimal(self.quantity) - used_qty
+        return max(remaining, Decimal('0.0'))
+
     def __str__(self):
         if self.part_name:
             return f"{self.product_number} {self.title} {self.part_name}"
         return f"{self.product_number} {self.title}"
+
+    class Meta:
+        ordering = ['product_number']
 
 
 class Employee(models.Model):

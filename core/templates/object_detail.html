@@ -225,6 +225,10 @@
                 font-size: 22px;
             }
 
+            .status-badge {
+                width: 50%;
+            }
+
             .items-table thead {
                 display: none;
             }
@@ -336,7 +340,7 @@
                         <td data-label="Кол-во">{{ item.quantity }} шт.</td>
                         <td data-label="Работник">
                             {% if item.employee %}
-                                {{ item.employee.full_name }}
+                                {{ item.employee }}
                             {% else %}
                                 <span style="color: #94a3b8;">Не назначен</span>
                             {% endif %}

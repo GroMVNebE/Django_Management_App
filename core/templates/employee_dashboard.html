@@ -1,0 +1,249 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Список изделий</title>
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+            margin: 0;
+            padding: 20px 12px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #475569;
+            margin: 28px 0 14px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .badge-count {
+            background-color: #2563eb;
+            color: #ffffff;
+            font-size: 12px;
+            padding: 2px 8px;
+            border-radius: 12px;
+        }
+
+        .card {
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+            transition: border-color 0.2s ease;
+        }
+
+        .card:hover {
+            border-color: #cbd5e1;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .object-tag {
+            display: inline-block;
+            background-color: #eff6ff;
+            color: #2563eb;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 6px;
+            margin-bottom: 6px;
+        }
+
+        .product-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0 0 4px 0;
+        }
+
+        .product-meta {
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        .card-actions {
+            margin-top: 14px;
+            padding-top: 12px;
+            border-top: 1px solid #f1f5f9;
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s ease;
+        }
+
+        .btn-primary {
+            background-color: #2563eb;
+            color: #ffffff;
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            background-color: #1d4ed8;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .status-queued {
+            background-color: #fef3c7;
+            color: #d97706;
+        }
+
+        .quantity-form {
+            display: flex; gap: 8px; width: 100%; align-items: center;
+        }
+        .quantity-input {
+            width: 100px; padding: 9px 12px; border: 1px solid #cbd5e1;
+            border-radius: 8px; font-size: 14px; font-weight: 600; text-align: center;
+        }
+        .alert {
+            padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 14px;
+        }
+        .alert-success { background-color: #def7ec; color: #03543f; }
+        .alert-error { background-color: #fde8e8; color: #9b1c1c; }
+
+        @media (min-width: 640px) {
+            body {
+                padding: 40px 20px;
+            }
+            .btn-primary {
+                width: auto;
+            }
+            .quantity-form { justify-content: flex-end; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}error{% else %}success{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    {% if queued_items %}
+        <div class="section-title">
+            <span>Доступные объекты в работе</span>
+            <span class="badge-count">{{  queued_items.count }}</span>
+        </div>
+        {% for item in queued_items %}
+        <div class="card">
+            <span class="object-tag">Объект № {{ item.product.object.number }}</span>
+            <div class="card-header">
+                <div>
+                    <h3 class="product-title">
+                        {{ item.product.product_number }} — {{ item.product.title }}
+                        {% if item.product.part_name %}({{ item.product.part_name }}){% endif %}
+                    </h3>
+                    <div class="product-meta">
+                        Количество: <strong>{{ item.quantity }} шт.</strong>
+                    </div>
+                </div>
+                <span class="status-badge status-queued">В очереди</span>
+            </div>
+
+            <div class="card-actions">
+                <form method="post" action="{% url 'start_queued_item' item.id %}" style="width: 100%; text-align: right;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary">Взять в работу</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="section-title">
+            <span>Доступные объекты в работе</span>
+            <span class="badge-count">{{ available_products.count }}</span>
+        </div>
+
+        {% if available_products %}
+            {% for product in available_products %}
+            <div class="card">
+                <span class="object-tag">Объект № {{ product.object.number }}</span>
+                <div class="card-header">
+                    <div>
+                        <h3 class="product-title">
+                            {{ product.product_number }} — {{ product.title }}
+                            {% if product.part_name %}({{ product.part_name }}){% endif %}
+                        </h3>
+                        <div class="product-meta">
+                            Доступно: <strong>{{ product.available_quantity|floatformat:"-1" }} шт.</strong></strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-actions">
+                    <form method="post" action="{% url 'start_product_item' product.id %}" class="quantity-form">
+                        {% csrf_token %}
+                        <label for="qty_{{ product.id }}" style="font-size: 13px; color: #64748b;">Кол-во:</label>
+                        <input 
+                            type="number" 
+                            id="qty_{{ product.id }}"
+                            name="quantity" 
+                            value="{{ product.available_quantity }}" 
+                            min="0.1" 
+                            max="{{ product.available_quantity }}" 
+                            step="0.1" 
+                            class="quantity-input" 
+                            required
+                        >
+                        <button type="submit" class="btn btn-primary">Взять в работу</button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        {% endif %}
+    {% endif %}
+</div>
+
+</body>
+</html>
