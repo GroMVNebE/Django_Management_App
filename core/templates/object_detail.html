@@ -101,6 +101,50 @@
         .btn-danger { background-color: #dc2626; color: #ffffff; }
         .btn-danger:hover { background-color: #b91c1c; }
 
+        .modal-dialog {
+            border: none;
+            border-radius: 16px;
+            padding: 24px;
+            width: calc(100% - 32px);
+            max-width: 440px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            box-sizing: border-box;
+            margin: auto;
+        }
+        .modal-dialog::backdrop {
+            background: rgba(15, 23, 42, 0.55);
+            backdrop-filter: blur(2px);
+        }
+        .modal-dialog[open] {
+            animation: modal-fade-in 0.2s ease-out forwards;
+        }
+
+        @keyframes modal-fade-in {
+            from {
+                opacity: 0;
+                transform: scale(0.96);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+        
+        .btn-primary {
+            background-color: #538aff;
+            color: #ffffff;
+        }
+
+        .btn-primary:hover {
+            background-color: #3d6cec;
+        }
+
         h1 {
             font-size: 26px;
             font-weight: 800;
@@ -134,8 +178,9 @@
             padding: 16px 20px;
             border-bottom: 1px solid #e2e8f0;
             display: flex;
+            flex-direction: column;
             justify-content: space-between;
-            align-items: center;
+            align-items: stretch;
             flex-wrap: wrap;
             gap: 12px;
         }
@@ -229,6 +274,32 @@
                 width: 50%;
             }
 
+            .modal-dialog {
+                width: 100%;
+                max-width: 100%;
+                margin-bottom: 0;
+                border-bottom-left-radius: 0;
+                border-bottom-right-radius: 0;
+                padding: 20px 16px;
+            }
+
+            .modal-actions {
+                flex-direction: column-reverse;
+                gap: 10px !important;
+            }
+
+            .modal-actions .btn {
+                width: 100%;
+                padding: 12px;
+                font-size: 15px;
+            }
+
+            .modal-dialog select.form-control,
+            .modal-dialog input.form-control {
+                padding: 12px !important;
+                font-size: 16px !important;
+            }
+
             .items-table thead {
                 display: none;
             }
@@ -312,14 +383,27 @@
         {% for product in products %}
         <div class="product-card">
             <div class="product-header">
-                <div>
-                    <h3 class="product-title">
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 16px;">
+                    <div class="product-title" style="margin-bottom: 0;">
                         {{ product.product_number }} — {{ product.title }}
                         {% if product.part_name %}({{ product.part_name }}){% endif %}
-                    </h3>
+                    </div>
+                    {% if product.available_quantity > 0 %}
+                        <button 
+                            type="button" 
+                            class="btn btn-primary btn-sm"
+                            style="white-space: nowrap;"
+                            onclick="openAssignModal('{{ product.id }}', '{{ product.product_number }} — {{ product.title|escapejs }}', '{{ product.available_quantity }}')"
+                        >
+                            + Назначить работника
+                        </button>
+                    {% endif %}
                 </div>
-                <div class="product-meta">
-                    Кол-во: <strong>{{ product.quantity }} шт.</strong> | Оплата: <strong>{{ product.payment }} ₽</strong>
+
+                <div class="product-qty" style="color: #64748b; font-size: 13px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; margin-top: 2px;">
+                    <span>Доступно: <strong>{{ product.available_quantity|floatformat:"-1" }}</strong> / {{ product.quantity }} шт.</span>
+                    <span style="color: #cbd5e1;">•</span>
+                    <span>Оплата: <strong>{{ product.payment }} ₽</strong></span>
                 </div>
             </div>
 
@@ -332,6 +416,7 @@
                         <th>Статус</th>
                         <th>Дата начала</th>
                         <th>Дата окончания</th>
+                        <th style="text-align: right;">Действие</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -356,6 +441,16 @@
                         <td data-label="Окончание">
                             {{ item.end_time|date:"d.m.Y H:i"|default:"—" }}
                         </td>
+                        <td data-label="Действие" style="text-align: right;">
+                            {% if item.status != 'completed' %}
+                                <form method="post" action="{% url 'complete_product_item' item.id %}" style="display: inline-block;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-success btn-sm" title="Отметить как завершенное" onclick="return confirm('Отметить экземпляр как завершённый?');">
+                                        ✓ Завершить
+                                    </button>
+                                </form>
+                            {% endif %}
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -367,6 +462,65 @@
         <p style="color: #64748b; text-align: center; padding: 40px 0;">В данном объекте нет изделий</p>
     {% endif %}
 </div>
+
+<dialog id="assignModal" class="modal-dialog">
+    <form method="post" id="assignForm">
+        {% csrf_token %}
+        <h3 style="margin-top: 0; margin-bottom: 12px;" id="modalProductTitle">Назначить работника</h3>
+        
+        <div style="margin-bottom: 16px;">
+            <label for="employeeSelect" style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px;">Выберите работника:</label>
+            <select name="employee_id" id="employeeSelect" class="form-control" required style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1;">
+                <option value="" disabled selected>-- Выберите из списка --</option>
+                {% for emp in employees %}
+                    <option value="{{ emp.id }}">{{ emp }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label for="modalQuantity" style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px;">Количество:</label>
+            <input 
+                type="number" 
+                name="quantity" 
+                id="modalQuantity" 
+                value="1" 
+                min="0.1" 
+                step="0.1" 
+                class="form-control" 
+                required 
+                style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1;"
+            >
+            <small style="color: #64748b; font-size: 12px;">Максимально доступно: <span id="modalMaxQty"></span> шт.</small>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 8px;">
+            <button type="button" class="btn btn-danger" onclick="closeAssignModal()">Отмена</button>
+            <button type="submit" class="btn btn-primary">Назначить в очередь</button>
+        </div>
+    </form>
+</dialog>
+
+<script>
+    const assignModal = document.getElementById('assignModal');
+    const assignForm = document.getElementById('assignForm');
+    const modalProductTitle = document.getElementById('modalProductTitle');
+    const modalQuantity = document.getElementById('modalQuantity');
+    const modalMaxQty = document.getElementById('modalMaxQty');
+
+    function openAssignModal(productId, productTitle, availableQty) {
+        assignForm.action = `/master/product/${productId}/assign/`;
+        modalProductTitle.textContent = `Назначить: ${productTitle}`;
+        modalQuantity.max = availableQty;
+        modalQuantity.value = Math.min(1, parseFloat(availableQty));
+        modalMaxQty.textContent = availableQty;
+        assignModal.showModal();
+    }
+
+    function closeAssignModal() {
+        assignModal.close();
+    }
+</script>
 
 </body>
 </html>

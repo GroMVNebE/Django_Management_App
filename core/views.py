@@ -9,7 +9,7 @@ from django.core.exceptions import ValidationError
 from django.db.models import Sum, F, FloatField, ExpressionWrapper, Value, DecimalField
 from django.db.models.functions import Coalesce
 from decimal import Decimal
-from .models import Object, Product, ParsingBlacklist, ObjectStatus, ProductItem
+from .models import Object, Product, ParsingBlacklist, ObjectStatus, ProductItem, Employee
 from .utils import parse_spec, decode_id
 
 
@@ -54,7 +54,7 @@ def index(request):
     elif is_worker(request.user):
         return redirect('employee_dashboard')
     else:
-        return redirect('login')
+        return redirect('logout')
 
 
 @login_required
@@ -197,6 +197,92 @@ def delete_object_view(request, object_id):
 
 @login_required
 @user_passes_test(is_master, login_url='')
+@require_POST
+def assign_worker_view(request, product_id):
+    """Назначить работника на изготовление изделия (добавить в очередь)"""
+    product = get_object_or_404(Product, pk=product_id)
+
+    employee_id = request.POST.get('employee_id')
+    employee = get_object_or_404(Employee, pk=employee_id)
+
+    try:
+        quantity = Decimal(request.POST.get('quantity', '1.0'))
+    except (ValueError, TypeError):
+        messages.error(request, 'Указано некорректное количество')
+        return redirect('object_detail', hashed_id=product.object.hashid)
+
+    if quantity <= 0:
+        messages.error(request, 'Количество должно быть больше 0')
+        return redirect('object_detail', hashed_id=product.object.hashid)
+
+    available_qty = product.available_quantity
+    if quantity > available_qty:
+        messages.error(
+            request,
+            f'Указанное количество ({quantity}) превышает доступный остаток ({available_qty})'
+        )
+        return redirect('object_detail', hashed_id=product.object.hashid)
+
+    existing_queued_item = ProductItem.objects.filter(
+        product=product,
+        employee=employee,
+        status=ProductItem.StatusChoices.QUEUED
+    ).first()
+
+    if existing_queued_item:
+        existing_queued_item.quantity += quantity
+        existing_queued_item.save()
+        messages.success(
+            request, f'Изделие "{product}" успешно добавлено в очередь для рабочего {employee}')
+    else:
+        ProductItem.objects.create(
+            product=product,
+            employee=employee,
+            quantity=quantity,
+            status=ProductItem.StatusChoices.QUEUED
+        )
+        messages.success(
+            request, f'Изделие "{product}" успешно добавлено в очередь для рабочего {employee}')
+
+    return redirect('object_detail', hashed_id=product.object.hashid)
+
+
+@login_required
+@user_passes_test(is_master, login_url='')
+@require_POST
+def complete_product_item(request, item_id):
+    """Отметить экземпляр изделия как завершённый"""
+    item = get_object_or_404(ProductItem, pk=item_id)
+    redirect_hashid = item.product.object.hashid
+
+    if item.status != ProductItem.StatusChoices.COMPLETED:
+        existing_completed_item = ProductItem.objects.filter(
+            product=item.product,
+            employee=item.employee,
+            status=ProductItem.StatusChoices.COMPLETED
+        ).first()
+
+        if existing_completed_item:
+            existing_completed_item.quantity += item.quantity
+            existing_completed_item.end_time = timezone.now()
+            existing_completed_item.save()
+            item.delete()
+            messages.success(
+                request, f'Изделие "{item.product}", выполняемое {item.employee}, отмечено, как завершённое')
+        else:
+            item.status = ProductItem.StatusChoices.COMPLETED
+            item.end_time = timezone.now()
+            item.save()
+            messages.success(
+                request, f'Изделие "{item.product}", выполняемое {item.employee}, отмечено, как завершённое')
+    else:
+        messages.info(request, 'Этот экземпляр уже завершён')
+
+    return redirect('object_detail', hashed_id=redirect_hashid)
+
+
+@login_required
+@user_passes_test(is_master, login_url='')
 def object_detail_view(request, hashed_id):
     """Страница деталей объекта со списком изделий и их экземпляров"""
     object_id = decode_id(hashed_id)
@@ -210,14 +296,16 @@ def object_detail_view(request, hashed_id):
 
     has_product_items = ProductItem.objects.filter(
         product__object=obj).exists()
-
     is_in_work = obj.status.filter(title="В работе").exists()
+
+    employees = Employee.objects.all()
 
     context = {
         'object': obj,
         'products': products,
         'has_product_items': has_product_items,
         'is_in_work': is_in_work,
+        'employees': employees,
     }
     return render(request, 'object_detail.html', context)
 
