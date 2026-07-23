@@ -58,7 +58,7 @@ def index(request):
 
 
 @login_required
-@user_passes_test(is_master, login_url='')
+@user_passes_test(is_master, login_url='/')
 def master_dashboard(request):
     """Главная страница для мастера со списком всех объектов"""
     objects_list = Object.objects.annotate(
@@ -100,7 +100,7 @@ def master_dashboard(request):
 
 
 @login_required
-@user_passes_test(is_master, login_url='')
+@user_passes_test(is_master, login_url='/')
 def import_objects_view(request):
     """Страница импорта объектов из Excel."""
     if request.method == 'POST':
@@ -152,7 +152,7 @@ def import_objects_view(request):
 
 
 @login_required
-@user_passes_test(is_master, login_url='')
+@user_passes_test(is_master, login_url='/')
 @require_POST
 def toggle_object_status_view(request, object_id):
     """Переключение статуса объекта между 'В работе' и 'В очереди'"""
@@ -174,7 +174,7 @@ def toggle_object_status_view(request, object_id):
 
 
 @login_required
-@user_passes_test(is_master, login_url='')
+@user_passes_test(is_master, login_url='/')
 @require_POST
 def delete_object_view(request, object_id):
     """Удаление объекта (только если нет экземпляров ProductItem)"""
@@ -196,7 +196,7 @@ def delete_object_view(request, object_id):
 
 
 @login_required
-@user_passes_test(is_master, login_url='')
+@user_passes_test(is_master, login_url='/')
 @require_POST
 def assign_worker_view(request, product_id):
     """Назначить работника на изготовление изделия (добавить в очередь)"""
@@ -248,12 +248,17 @@ def assign_worker_view(request, product_id):
 
 
 @login_required
-@user_passes_test(is_master, login_url='')
 @require_POST
 def complete_product_item(request, item_id):
     """Отметить экземпляр изделия как завершённый"""
     item = get_object_or_404(ProductItem, pk=item_id)
     redirect_hashid = item.product.object.hashid
+
+    is_master_user = is_master(request.user)
+    is_assigned_worker = item.employee and item.employee.user == request.user
+
+    if not (is_master_user or is_assigned_worker):
+        return redirect('logout')
 
     if item.status != ProductItem.StatusChoices.COMPLETED:
         existing_completed_item = ProductItem.objects.filter(
@@ -267,22 +272,27 @@ def complete_product_item(request, item_id):
             existing_completed_item.end_time = timezone.now()
             existing_completed_item.save()
             item.delete()
-            messages.success(
-                request, f'Изделие "{item.product}", выполняемое {item.employee}, отмечено, как завершённое')
         else:
             item.status = ProductItem.StatusChoices.COMPLETED
             item.end_time = timezone.now()
             item.save()
+        if is_master_user:
             messages.success(
                 request, f'Изделие "{item.product}", выполняемое {item.employee}, отмечено, как завершённое')
+        else:
+            messages.success(
+                request, f'Работа над изделием "{item.product}" закончена')
     else:
         messages.info(request, 'Этот экземпляр уже завершён')
 
-    return redirect('object_detail', hashed_id=redirect_hashid)
+    if is_master_user:
+        return redirect('object_detail', hashed_id=redirect_hashid)
+    else:
+        return redirect('employee_items')
 
 
 @login_required
-@user_passes_test(is_master, login_url='')
+@user_passes_test(is_master, login_url='/')
 def object_detail_view(request, hashed_id):
     """Страница деталей объекта со списком изделий и их экземпляров"""
     object_id = decode_id(hashed_id)
@@ -311,7 +321,7 @@ def object_detail_view(request, hashed_id):
 
 
 @login_required
-@user_passes_test(is_worker, login_url='')
+@user_passes_test(is_worker, login_url='/')
 @require_POST
 def start_queued_item(request, item_id):
     """Взять в работу экземпляр изделия из очереди"""
@@ -342,7 +352,7 @@ def start_queued_item(request, item_id):
 
 
 @login_required
-@user_passes_test(is_worker, login_url='')
+@user_passes_test(is_worker, login_url='/')
 @require_POST
 def start_product_item(request, product_id):
     """Создать новый экземпляр изделия и взять его в работу"""
@@ -393,7 +403,7 @@ def start_product_item(request, product_id):
 
 
 @login_required
-@user_passes_test(is_worker, login_url='')
+@user_passes_test(is_worker, login_url='/')
 def employee_dashboard(request):
     """Страница рабочего: список изделий в работе и в очереди"""
 
@@ -426,3 +436,39 @@ def employee_dashboard(request):
         'queued_items': queued_items,
     }
     return render(request, 'employee_dashboard.html', context)
+
+
+@login_required
+@user_passes_test(is_worker, login_url='/')
+@require_POST
+def cancel_product_item(request, item_id):
+    """Отмена изготовления экземпляра изделия"""
+    item = get_object_or_404(ProductItem, pk=item_id)
+
+    product_title = str(item.product)
+    quantity = item.quantity
+
+    item.delete()
+
+    messages.success(
+        request, f'Изготовление изделия "{product_title}" ({quantity} шт.) отменено')
+
+    return redirect('employee_items')
+
+
+@login_required
+@user_passes_test(is_worker, login_url='/')
+def employee_items(request):
+    """Страница работника со всеми его изделиями в работе"""
+    employee = Employee.objects.filter(user=request.user).first()
+
+    in_progress_items = ProductItem.objects.filter(
+        employee=employee,
+        status=ProductItem.StatusChoices.IN_PROGRESS
+    ).select_related('product', 'product__object').order_by('-start_time')
+
+    context = {
+        'employee': employee,
+        'in_progress_items': in_progress_items,
+    }
+    return render(request, 'employee_items.html', context)

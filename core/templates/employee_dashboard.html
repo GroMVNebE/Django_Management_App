@@ -24,6 +24,25 @@
             margin: 0 auto;
         }
 
+        .nav-header {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .nav-link {
+            padding: 8px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            color: #64748b;
+            background: #e2e8f0;
+        }
+        .nav-link.active {
+            background: #2563eb;
+            color: #fff;
+        }
+
         .section-title {
             font-size: 16px;
             font-weight: 700;
@@ -163,6 +182,10 @@
 <body>
 
 <div class="container">
+    <div class="nav-header">
+        <a href="{% url 'employee_dashboard' %}" class="nav-link active">Доступные изделия</a>
+        <a href="{% url 'employee_items' %}" class="nav-link">Изделия в работе</a>
+    </div>
     {% if messages %}
         {% for message in messages %}
             <div class="alert alert-{% if message.tags == 'error' %}error{% else %}success{% endif %}">
@@ -181,8 +204,7 @@
             <div class="card-header">
                 <div>
                     <h3 class="product-title">
-                        {{ item.product.product_number }} — {{ item.product.title }}
-                        {% if item.product.part_name %}({{ item.product.part_name }}){% endif %}
+                        {{ item.product }}
                     </h3>
                     <div class="product-meta">
                         Количество: <strong>{{ item.quantity }} шт.</strong>
@@ -212,8 +234,7 @@
                 <div class="card-header">
                     <div>
                         <h3 class="product-title">
-                            {{ product.product_number }} — {{ product.title }}
-                            {% if product.part_name %}({{ product.part_name }}){% endif %}
+                            {{ product }}
                         </h3>
                         <div class="product-meta">
                             Доступно: <strong>{{ product.available_quantity|floatformat:"-1" }} шт.</strong></strong>

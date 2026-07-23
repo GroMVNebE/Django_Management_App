@@ -118,8 +118,8 @@ class Product(models.Model):
 
     def __str__(self):
         if self.part_name:
-            return f"{self.product_number} {self.title} {self.part_name}"
-        return f"{self.product_number} {self.title}"
+            return f"{self.product_number} — {self.title} ({self.part_name})"
+        return f"{self.product_number} — {self.title}"
 
     class Meta:
         ordering = ['product_number']

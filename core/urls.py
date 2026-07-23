@@ -22,4 +22,7 @@ urlpatterns = [
          views.start_queued_item, name='start_queued_item'),
     path('employee/product/<int:product_id>/start/',
          views.start_product_item, name='start_product_item'),
+    path('employee/items/', views.employee_items, name='employee_items'),
+    path('item/<int:item_id>/cancel/',
+         views.cancel_product_item, name='cancel_product_item'),
 ]
