@@ -1,0 +1,122 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Изделия в работе</title>
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+</head>
+<body>
+
+<div class="container">
+    <div class="navbar">
+        <a href="{% url 'master_dashboard' %}" class="nav-link">Объекты</a>
+        <a href="{% url 'items_in_work' %}" class="nav-link active">Изделия в работе</a>
+        <a href="{% url 'import_objects' %}" class="nav-link">Импорт объектов</a>
+    </div>
+
+    <div class="header">
+        <h1>Изделия в работе и очереди</h1>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}error{% else %}success{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="section-header">
+        <h2>В процессе изготовления</h2>
+        <span class="badge-count">{{ in_progress_items.count }}</span>
+    </div>
+
+    {% if in_progress_items %}
+        <div class="items-list">
+            {% for item in in_progress_items %}
+            <div class="item-card in-progress">
+                <div class="item-info">
+                    <a href="{% url 'object_detail' item.product.object.hashid %}" class="object-tag">
+                        Объект № {{ item.product.object.number }}
+                    </a>
+                    <h3 class="product-title">
+                        {{ item.product.product_number }} — {{ item.product.title }}
+                        {% if item.product.part_name %}({{ item.product.part_name }}){% endif %}
+                    </h3>
+                    <div class="meta-info">
+                        <span>Количество: <strong>{{ item.quantity }} шт.</strong></span>
+                        <span class="divider">|</span>
+                        <span>Работник: 
+                            <span class="employee-badge">
+                                {% if item.employee %}{{ item.employee }}{% else %}Не назначен{% endif %}
+                            </span>
+                        </span>
+                        <span class="divider">|</span>
+                        <span>Начало: {{ item.start_time|date:"d.m.Y H:i"|default:"—" }}</span>
+                    </div>
+                </div>
+
+                <div class="card-actions">
+                    <form method="post" action="{% url 'complete_product_item' item.id %}" style="margin: 0;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success" onclick="return confirm('Отметить изделие как завершённое?');">
+                            ✓ Завершить
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">Нет изделий в процессе изготовления</div>
+    {% endif %}
+
+    <div class="section-header">
+        <h2>В очереди</h2>
+        <span class="badge-count">{{ queued_items.count }}</span>
+    </div>
+
+    {% if queued_items %}
+        <div class="items-list">
+            {% for item in queued_items %}
+            <div class="item-card queued">
+                <div class="item-info">
+                    <a href="{% url 'object_detail' item.product.object.hashid %}" class="object-tag">
+                        Объект № {{ item.product.object.number }}
+                    </a>
+                    <h3 class="product-title">
+                        {{ item.product.product_number }} — {{ item.product.title }}
+                        {% if item.product.part_name %}({{ item.product.part_name }}){% endif %}
+                    </h3>
+                    <div class="meta-info">
+                        <span>Количество: <strong>{{ item.quantity }} шт.</strong></span>
+                        <span class="divider">|</span>
+                        <span>Назначен: 
+                            <span class="employee-badge">
+                                {% if item.employee %}{{ item.employee }}{% else %}Не назначен{% endif %}
+                            </span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="card-actions">
+                    <form method="post" action="{% url 'complete_product_item' item.id %}" style="margin: 0;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success" onclick="return confirm('Отметить изделие как завершённое?');">
+                            ✓ Завершить
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">Очередь пуста</div>
+    {% endif %}
+
+</div>
+
+</body>
+</html>

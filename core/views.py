@@ -101,6 +101,30 @@ def master_dashboard(request):
 
 @login_required
 @user_passes_test(is_master, login_url='/')
+def items_in_work(request):
+    """Страница с изделиями в работе и в очереди"""
+
+    in_progress_items = ProductItem.objects.filter(
+        status=ProductItem.StatusChoices.IN_PROGRESS
+    ).select_related(
+        'product', 'product__object', 'employee'
+    ).order_by('start_time')
+
+    queued_items = ProductItem.objects.filter(
+        status=ProductItem.StatusChoices.QUEUED
+    ).select_related(
+        'product', 'product__object', 'employee'
+    ).order_by('id')
+
+    context = {
+        'in_progress_items': in_progress_items,
+        'queued_items': queued_items,
+    }
+    return render(request, 'items_in_work.html', context)
+
+
+@login_required
+@user_passes_test(is_master, login_url='/')
 def import_objects_view(request):
     """Страница импорта объектов из Excel."""
     if request.method == 'POST':
@@ -465,7 +489,7 @@ def employee_items(request):
     in_progress_items = ProductItem.objects.filter(
         employee=employee,
         status=ProductItem.StatusChoices.IN_PROGRESS
-    ).select_related('product', 'product__object').order_by('-start_time')
+    ).select_related('product', 'product__object').order_by('start_time')
 
     context = {
         'employee': employee,

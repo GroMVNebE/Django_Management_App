@@ -17,6 +17,8 @@ urlpatterns = [
          views.assign_worker_view, name='assign_worker'),
     path('master/item/<int:item_id>/complete/',
          views.complete_product_item, name='complete_product_item'),
+    path('master/items-in-work/', views.items_in_work,
+         name='items_in_work'),
     path('employee/', views.employee_dashboard, name='employee_dashboard'),
     path('employee/item/<int:item_id>/start/',
          views.start_queued_item, name='start_queued_item'),
