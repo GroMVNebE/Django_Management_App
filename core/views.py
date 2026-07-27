@@ -1,4 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
+from django.urls import reverse
 from django.contrib import messages
 from django.http import Http404
 from django.utils import timezone
@@ -323,6 +324,9 @@ def object_detail_view(request, hashed_id):
     if object_id is None:
         raise Http404("Объект не найден")
     obj = get_object_or_404(Object, pk=object_id)
+    referer_url = request.META.get('HTTP_REFERER')
+    if not referer_url:
+        referer_url = reverse('master_dashboard')
 
     products = Product.objects.filter(object=obj).prefetch_related(
         'items__employee'
@@ -340,6 +344,7 @@ def object_detail_view(request, hashed_id):
         'has_product_items': has_product_items,
         'is_in_work': is_in_work,
         'employees': employees,
+        'back_url': referer_url,
     }
     return render(request, 'object_detail.html', context)
 

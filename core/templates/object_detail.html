@@ -11,7 +11,7 @@
 
 <div class="container">
     <nav class="navbar">
-        <a href="{% url 'master_dashboard' %}" class="nav-link">← Назад к объектам</a>
+        <a href="{{ back_url }}" class="nav-link">← Назад</a>
     </nav>
 
     {% if messages %}
