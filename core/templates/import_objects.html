@@ -71,9 +71,16 @@
         <a href="{% url 'import_objects' %}" class="nav-link active">Импорт объектов</a>
     </nav>
     
-    <h1>Импорт объектов</h1>
+    <header>
+        <h1>Импорт объектов</h1>
+        <div class="header-actions">
+            <a href="{% url 'parsing_blacklist' %}" class="nav-link">
+                ⚙ Чёрный список
+            </a>
+        </div>
+    </header>
     <p class="subtitle">Загрузите файл Excel (.xlsx, .xlsm, .xls), содержащий спецификацию</p>
-
+    
     {% if messages %}
         {% for message in messages %}
             <div class="alert alert-{% if message.tags == 'error' %}error{% else %}success{% endif %}">
@@ -81,7 +88,7 @@
             </div>
         {% endfor %}
     {% endif %}
-
+    
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
         

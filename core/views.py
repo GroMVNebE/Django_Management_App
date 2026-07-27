@@ -178,6 +178,45 @@ def import_objects_view(request):
 
 @login_required
 @user_passes_test(is_master, login_url='/')
+def parsing_blacklist(request):
+    """Страница управления чёрным списком масок для импорта спецификаций"""
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+
+        if action == 'add':
+            value = request.POST.get('value', '').strip()
+            if value:
+                if ParsingBlacklist.objects.filter(value__iexact=value).exists():
+                    messages.warning(
+                        request, f'Маска "{value}" уже существует в чёрном списке.')
+                else:
+                    ParsingBlacklist.objects.create(value=value)
+                    messages.success(
+                        request, f'Маска "{value}" успешно добавлена в чёрный список.')
+            else:
+                messages.error(request, 'Значение маски не может быть пустым.')
+
+        elif action == 'delete':
+            item_id = request.POST.get('item_id')
+            blacklist_item = get_object_or_404(ParsingBlacklist, pk=item_id)
+            value_name = blacklist_item.value
+            blacklist_item.delete()
+            messages.success(
+                request, f'Маска "{value_name}" удалена из чёрного списка.')
+
+        return redirect('parsing_blacklist')
+
+    blacklist_items = ParsingBlacklist.objects.all().order_by('value')
+
+    context = {
+        'blacklist_items': blacklist_items,
+    }
+    return render(request, 'parsing_blacklist.html', context)
+
+
+@login_required
+@user_passes_test(is_master, login_url='/')
 @require_POST
 def toggle_object_status_view(request, object_id):
     """Переключение статуса объекта между 'В работе' и 'В очереди'"""

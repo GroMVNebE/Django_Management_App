@@ -1,0 +1,83 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Чёрный список импорта</title>
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+</head>
+<body>
+
+<div class="container">
+    <div class="navbar">
+        <a href="{% url 'master_dashboard' %}" class="nav-link">Объекты</a>
+        <a href="{% url 'items_in_work' %}" class="nav-link">Изделия в работе</a>
+        <a href="{% url 'import_objects' %}" class="nav-link active">Импорт объектов</a>
+    </div>
+
+    <header>
+        <h1>Чёрный список импорта</h1>
+        <div class="header-actions">
+            <a href="{% url 'import_objects' %}" class="nav-link">← Назад к импорту</a>
+        </div>
+    </header>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="add-card">
+        <form method="post" class="form-row">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add">
+            <input 
+                type="text" 
+                name="value" 
+                class="form-input" 
+                placeholder="Введите маску строки" 
+                required
+            >
+            <button type="submit" class="btn btn-primary">+ Добавить маску</button>
+        </form>
+    </div>
+
+    {% if blacklist_items %}
+        <table class="blacklist-table">
+            <thead>
+                <tr>
+                    <th>Маска</th>
+                    <th style="width: 100px; text-align: right;">Действие</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in blacklist_items %}
+                <tr>
+                    <td>
+                        <span class="pattern-badge">{{ item.value }}</span>
+                    </td>
+                    <td style="text-align: right;">
+                        <form method="post" style="margin: 0; display: inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="delete">
+                            <input type="hidden" name="item_id" value="{{ item.id }}">
+                            <button type="submit" class="btn btn-danger" onclick="return confirm('Удалить маску {{ item.value }}?');">
+                                Удалить
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty-state">Чёрный список пуст. Записи, совпадающие с масками, не создавались.</div>
+    {% endif %}
+</div>
+
+</body>
+</html>

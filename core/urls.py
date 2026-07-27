@@ -7,6 +7,8 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     path('master', views.master_dashboard, name='master_dashboard'),
     path('master/import/', views.import_objects_view, name='import_objects'),
+    path('master/import/blacklist/',
+         views.parsing_blacklist, name='parsing_blacklist'),
     path('master/object/<str:hashed_id>/',
          views.object_detail_view, name='object_detail'),
     path('master/object/<int:object_id>/toggle-status/',

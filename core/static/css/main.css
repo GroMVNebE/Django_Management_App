@@ -198,7 +198,6 @@ td {
 }
 
 td:first-child {
-    border-left: 1px solid #e2e8f0;
     border-top-left-radius: 12px;
     border-bottom-left-radius: 12px;
     color: #0f172a;
@@ -706,6 +705,72 @@ td:last-child {
     border-radius: 8px; font-size: 14px; font-weight: 600; text-align: center;
 }
 
+.add-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 28px;
+}
+
+.form-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.form-input {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.form-input:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.blacklist-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+}
+
+.blacklist-table th,
+.blacklist-table td {
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.blacklist-table th {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+    font-weight: 700;
+    background: #f8fafc;
+}
+
+.blacklist-table tr:hover td {
+    background-color: #f8fafc;
+}
+
+.pattern-badge {
+    font-family: monospace;
+    background-color: #c3f6ff;
+    color: #000000;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
 @media (max-width: 640px) {
     body {
         padding: 0;
@@ -858,5 +923,71 @@ td:last-child {
 
     .items-table td:first-child {
         width: auto;
+    }
+
+    .form-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .form-row .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .blacklist-table thead {
+        display: none;
+    }
+
+    .blacklist-table,
+    .blacklist-table tbody,
+    .blacklist-table tr,
+    .blacklist-table td {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .blacklist-table tr {
+        margin-bottom: 12px;
+        background-color: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 12px 16px;
+    }
+
+    .blacklist-table td {
+        padding: 6px 0;
+        border: none;
+        text-align: left !important;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .blacklist-table td::before {
+        content: attr(data-label);
+        font-size: 12px;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+    }
+
+    .blacklist-table td form {
+        width: 100%;
+        margin-top: 8px !important;
+    }
+
+    .blacklist-table td .btn-danger {
+        width: 100%;
+        text-align: center;
+        justify-content: center;
+        padding: 8px 12px;
+    }
+
+    .pattern-badge {
+        margin: 0 auto;
+        width: 100%;
+        text-align: center;
     }
 }
