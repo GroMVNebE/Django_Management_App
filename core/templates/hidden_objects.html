@@ -1,0 +1,68 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Скрытые объекты</title>
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+</head>
+<body>
+
+<div class="container">
+    <div class="navbar">
+        <a href="{% url 'master_dashboard' %}" class="nav-link">Объекты</a>
+        <a href="{% url 'items_in_work' %}" class="nav-link">Изделия в работе</a>
+        <a href="{% url 'hidden_objects' %}" class="nav-link active">Скрытые объекты</a>
+        <a href="{% url 'import_objects' %}" class="nav-link">Импорт объектов</a>
+    </div>
+
+    <header>
+        <h1>Скрытые объекты</h1>
+    </header>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {% if objects %}
+    <table>
+        <thead>
+            <tr>
+                <th>Номер объекта</th>
+                <th style="text-align: right;">Действие</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for obj in objects %}
+            <tr>
+                <td>
+                    <a href="{{ obj.get_absolute_url }}" class="object-link">
+                        {{ obj.number }}
+                    </a>
+                </td>
+                <td style="text-align: right;">
+                    <form method="post" action="{% url 'toggle_object_hidden' obj.id %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-secondary">
+                            Восстановить
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        Скрытых объектов нет
+    </div>
+    {% endif %}
+</div>
+
+</body>
+</html>

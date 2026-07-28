@@ -72,7 +72,7 @@ def master_dashboard(request):
             ),
             Value(0.0)
         )
-    ).all()
+    ).filter(is_hidden=False)
 
     for obj in objects_list:
         completed_items = ProductItem.objects.filter(
@@ -357,6 +357,24 @@ def complete_product_item(request, item_id):
 
 @login_required
 @user_passes_test(is_master, login_url='/')
+@require_POST
+def toggle_object_hidden(request, object_id):
+    """Скрытие или восстановление объекта"""
+    obj = get_object_or_404(Object, pk=object_id)
+    obj.is_hidden = not obj.is_hidden
+    obj.save()
+
+    if obj.is_hidden:
+        messages.success(request, f'Объект № {obj.number} скрыт.')
+        return redirect('master_dashboard')
+    else:
+        messages.success(
+            request, f'Объект № {obj.number} восстановлен из скрытых.')
+        return redirect('hidden_objects')
+
+
+@login_required
+@user_passes_test(is_master, login_url='/')
 def object_detail_view(request, hashed_id):
     """Страница деталей объекта со списком изделий и их экземпляров"""
     object_id = decode_id(hashed_id)
@@ -386,6 +404,14 @@ def object_detail_view(request, hashed_id):
         'back_url': referer_url,
     }
     return render(request, 'object_detail.html', context)
+
+
+@login_required
+@user_passes_test(is_master, login_url='/')
+def hidden_objects(request):
+    """Страница скрытых объектов"""
+    objects = Object.objects.filter(is_hidden=True)
+    return render(request, 'hidden_objects.html', {'objects': objects})
 
 
 @login_required
