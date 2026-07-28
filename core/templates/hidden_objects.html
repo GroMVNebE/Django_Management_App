@@ -10,12 +10,20 @@
 <body>
 
 <div class="container">
-    <div class="navbar">
-        <a href="{% url 'master_dashboard' %}" class="nav-link">Объекты</a>
-        <a href="{% url 'items_in_work' %}" class="nav-link">Изделия в работе</a>
-        <a href="{% url 'hidden_objects' %}" class="nav-link active">Скрытые объекты</a>
-        <a href="{% url 'import_objects' %}" class="nav-link">Импорт объектов</a>
-    </div>
+    <nav class="navbar">
+        <button type="button" class="burger-btn" id="burgerBtn" aria-label="Открыть меню">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+
+        <div class="nav-links" id="navLinks">
+            <a href="{% url 'master_dashboard' %}" class="nav-link">Объекты</a>
+            <a href="{% url 'items_in_work' %}" class="nav-link">Изделия в работе</a>
+            <a href="{% url 'hidden_objects' %}" class="nav-link active">Скрытые объекты</a>
+            <a href="{% url 'import_objects' %}" class="nav-link">Импорт объектов</a>
+        </div>
+    </nav>
 
     <header>
         <h1>Скрытые объекты</h1>
@@ -64,5 +72,25 @@
     {% endif %}
 </div>
 
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const burgerBtn = document.getElementById('burgerBtn');
+        const navLinks = document.getElementById('navLinks');
+
+        if (burgerBtn && navLinks) {
+            burgerBtn.addEventListener('click', function() {
+                burgerBtn.classList.toggle('is-active');
+                navLinks.classList.toggle('is-open');
+            });
+
+            document.addEventListener('click', function(event) {
+                if (!burgerBtn.contains(event.target) && !navLinks.contains(event.target)) {
+                    burgerBtn.classList.remove('is-active');
+                    navLinks.classList.remove('is-open');
+                }
+            });
+        }
+    });
+</script>
 </body>
 </html>
