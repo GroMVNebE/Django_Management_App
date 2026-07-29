@@ -1,0 +1,102 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Работники</title>
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+</head>
+<body>
+
+<div class="container">
+    <nav class="navbar">
+        <button type="button" class="burger-btn" id="burgerBtn" aria-label="Открыть меню">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+
+        <div class="nav-links" id="navLinks">
+            <a href="{% url 'master_dashboard' %}" class="nav-link">Объекты</a>
+            <a href="{% url 'items_in_work' %}" class="nav-link">Изделия в работе</a>
+            <a href="{% url 'workers_stats' %}" class="nav-link active">Работники</a>
+            <a href="{% url 'hidden_objects' %}" class="nav-link">Скрытые объекты</a>
+            <a href="{% url 'import_objects' %}" class="nav-link">Импорт объектов</a>
+        </div>
+    </nav>
+
+    <header>
+        <h1>Статистика работников</h1>
+        <a href="{% url 'all_workers_stats' %}" class="nav-link">
+            Все работники за всё время
+        </a>
+    </header>
+
+    <div class="month-picker">
+        <a href="?year={{ prev_year }}&month={{ prev_month }}" class="btn-month">
+            ←
+        </a>
+        <span class="month-title">{{ selected_month_name }} {{ selected_year }}</span>
+        <a href="?year={{ next_year }}&month={{ next_month }}" class="btn-month">
+            →
+        </a>
+    </div>
+
+    {% if monthly_stats %}
+        <div class="summary-card">
+            <span>Всего выплат за месяц:</span>
+            <strong>{{ total_month_payout|floatformat:2 }} ₽</strong>
+        </div>
+
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th>Работник</th>
+                    <th style="text-align: center;">Изделий</th>
+                    <th style="text-align: right;">Заработок</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for stat in monthly_stats %}
+                <tr>
+                    <td data-label="Работник">
+                        {{ stat.employee__name|default:"Не указан" }}
+                    </td>
+                    <td data-label="Изделий" style="text-align: center;">
+                        {{ stat.total_quantity }} шт.
+                    </td>
+                    <td data-label="Заработок" style="text-align: right;">
+                        <strong>{{ stat.total_earned|floatformat:2 }} ₽</strong>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty-state">За {{ selected_month_name|lower }} {{ selected_year }} г. нет данных о завершённых изделиях</div>
+    {% endif %}
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const burgerBtn = document.getElementById('burgerBtn');
+        const navLinks = document.getElementById('navLinks');
+
+        if (burgerBtn && navLinks) {
+            burgerBtn.addEventListener('click', function() {
+                burgerBtn.classList.toggle('is-active');
+                navLinks.classList.toggle('is-open');
+            });
+
+            document.addEventListener('click', function(event) {
+                if (!burgerBtn.contains(event.target) && !navLinks.contains(event.target)) {
+                    burgerBtn.classList.remove('is-active');
+                    navLinks.classList.remove('is-open');
+                }
+            });
+        }
+    });
+</script>
+</body>
+</html>

@@ -5,9 +5,10 @@ from django.http import Http404
 from django.utils import timezone
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.models import User, Group
 from django.views.decorators.http import require_POST
 from django.core.exceptions import ValidationError
-from django.db.models import Sum, F, FloatField, ExpressionWrapper, Value, DecimalField
+from django.db.models import Sum, F, Q, FloatField, ExpressionWrapper, Value, DecimalField
 from django.db.models.functions import Coalesce
 from decimal import Decimal
 from .models import Object, Product, ParsingBlacklist, ObjectStatus, ProductItem, Employee
@@ -412,6 +413,159 @@ def hidden_objects(request):
     """Страница скрытых объектов"""
     objects = Object.objects.filter(is_hidden=True)
     return render(request, 'hidden_objects.html', {'objects': objects})
+
+
+MONTH_NAMES = {
+    1: 'Январь', 2: 'Февраль', 3: 'Март', 4: 'Апрель',
+    5: 'Май', 6: 'Июнь', 7: 'Июль', 8: 'Август',
+    9: 'Сентябрь', 10: 'Октябрь', 11: 'Ноябрь', 12: 'Декабрь'
+}
+
+
+@login_required
+@user_passes_test(is_master, login_url='/')
+def workers_stats(request):
+    """Статистика работников с переключением по месяцам"""
+    now = timezone.now()
+
+    try:
+        selected_year = int(request.GET.get('year', now.year))
+        selected_month = int(request.GET.get('month', now.month))
+        if not (1 <= selected_month <= 12):
+            raise ValueError
+    except (ValueError, TypeError):
+        selected_year = now.year
+        selected_month = now.month
+
+    if selected_month == 1:
+        prev_year = selected_year - 1
+        prev_month = 12
+    else:
+        prev_year = selected_year
+        prev_month = selected_month - 1
+
+    if selected_month == 12:
+        next_year = selected_year + 1
+        next_month = 1
+    else:
+        next_year = selected_year
+        next_month = selected_month + 1
+
+    monthly_stats = ProductItem.objects.filter(
+        status=ProductItem.StatusChoices.COMPLETED,
+        end_time__year=selected_year,
+        end_time__month=selected_month
+    ).values(
+        'employee__id',
+        'employee__name'
+    ).annotate(
+        total_quantity=Sum('quantity'),
+        total_earned=Sum(
+            ExpressionWrapper(
+                F('quantity') * F('product__payment'),
+                output_field=FloatField()
+            )
+        )
+    ).order_by('-total_earned')
+
+    total_month_payout = sum(
+        item['total_earned'] or 0 for item in monthly_stats)
+
+    context = {
+        'monthly_stats': monthly_stats,
+        'total_month_payout': total_month_payout,
+        'selected_year': selected_year,
+        'selected_month': selected_month,
+        'selected_month_name': MONTH_NAMES.get(selected_month, ''),
+        'prev_year': prev_year,
+        'prev_month': prev_month,
+        'next_year': next_year,
+        'next_month': next_month,
+    }
+    return render(request, 'workers_stats.html', context)
+
+
+@login_required
+@user_passes_test(is_master, login_url='/')
+def all_workers_stats(request):
+    """Страница со статистикой всех работников за всё время"""
+    employees_stats = Employee.objects.annotate(
+        total_quantity=Coalesce(
+            Sum(
+                'product_items__quantity',
+                filter=Q(product_items__status=ProductItem.StatusChoices.COMPLETED)
+            ),
+            Value(Decimal('0.0'))
+        ),
+        total_earned=Coalesce(
+            Sum(
+                ExpressionWrapper(
+                    F('product_items__quantity') *
+                    F('product_items__product__payment'),
+                    output_field=FloatField()
+                ),
+                filter=Q(product_items__status=ProductItem.StatusChoices.COMPLETED)
+            ),
+            Value(0.0)
+        )
+    ).select_related('user').order_by('-total_earned', 'name')
+
+    context = {
+        'employees_stats': employees_stats,
+    }
+    return render(request, 'all_workers.html', context)
+
+
+@login_required
+@user_passes_test(is_master, login_url='/')
+@require_POST
+def create_worker(request):
+    """Создание нового аккаунта работника"""
+    name = request.POST.get('name', '').strip()
+    password = request.POST.get('password', '').strip()
+
+    if not name or not password:
+        messages.error(request, 'Заполните все поля')
+        return redirect('all_workers')
+
+    import uuid
+    username = f"worker_{uuid.uuid4().hex[:8]}"
+
+    user = User.objects.create_user(
+        username=username,
+        password=password,
+        first_name=name
+    )
+
+    worker_group, _ = Group.objects.get_or_create(name='worker')
+    user.groups.add(worker_group)
+
+    Employee.objects.create(
+        user=user,
+        name=name
+    )
+
+    messages.success(request, f'Работник "{name}" успешно создан!')
+    return redirect('all_workers_stats')
+
+
+@login_required
+@user_passes_test(is_master, login_url='/')
+@require_POST
+def deactivate_worker(request, employee_id):
+    """Деактивация пользователя Django, привязанного к работнику"""
+    employee = get_object_or_404(Employee, pk=employee_id)
+
+    if employee.user:
+        employee.user.is_active = False
+        employee.user.save()
+        messages.success(
+            request, f'Пользователь работника "{employee.name}" деактивирован.')
+    else:
+        messages.warning(
+            request, f'У работника "{employee.name}" нет привязанного пользователя Django.')
+
+    return redirect('all_workers_stats')
 
 
 @login_required

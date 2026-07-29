@@ -1,0 +1,149 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Все работники за всё время</title>
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    <style>
+        header {
+            margin-bottom: 8px;
+        }
+        .btn {
+            margin: 10px;
+        }
+        @media (max-width: 640px) {
+            .btn {
+                margin: 0 auto;
+                width: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <header>
+        <h1>Все работники</h1>
+        <a href="{% url 'workers_stats' %}" class="nav-link">← Статистика по месяцам</a>
+    </header>
+    <button type="button" class="btn btn-primary" onclick="openCreateWorkerModal()">
+        + Добавить работника
+    </button>
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}error{% elif message.tags == 'warning' %}info{% else %}success{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {% if employees_stats %}
+
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th>Работник</th>
+                    <th style="text-align: center;">Всего изделий</th>
+                    <th style="text-align: right;">Всего заработано</th>
+                    <th style="text-align: right;">Действие</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for emp in employees_stats %}
+                <tr>
+                    <td data-label="Работник">
+                        <strong>{{ emp.name }}</strong>
+                    </td>
+                    <td data-label="Всего изделий" style="text-align: center;">
+                        {{ emp.total_quantity }} шт.
+                    </td>
+                    <td data-label="Всего заработано" style="text-align: right;">
+                        <strong>{{ emp.total_earned|floatformat:2 }} ₽</strong>
+                    </td>
+                    <td data-label="Действие" style="text-align: right;">
+                        {% if emp.user and emp.user.is_active %}
+                            <form method="post" action="{% url 'deactivate_worker' emp.id %}" style="display: inline-block; margin: 0;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger" onclick="return confirm('Деактивировать аккаунт работника {{ emp.name }}?');">
+                                    Удалить
+                                </button>
+                            </form>
+                        {% else %}
+                            <span style="color: #94a3b8; font-size: 13px;">Аккаунт неактивен</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty-state">Список работников пуст</div>
+    {% endif %}
+</div>
+
+<dialog id="createWorkerModal" style="padding: 24px; border-radius: 12px; border: 1px solid #cbd5e1; max-width: 400px; width: 100%;">
+    <h3 style="margin-top: 0; margin-bottom: 16px;">Добавить работника</h3>
+    <form method="post" action="{% url 'create_worker' %}">
+        {% csrf_token %}
+        <div style="margin-bottom: 16px;">
+            <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px;">Отображаемое имя:</label>
+            <input type="text" name="name" class="form-control" required style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1;">
+        </div>
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px;">Пароль:</label>
+            <input type="password" name="password" class="form-control" placeholder="Пароль для входа" required style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1;">
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 8px;">
+            <button type="button" class="btn btn-secondary" onclick="closeCreateWorkerModal()">Отмена</button>
+            <button type="submit" class="btn btn-primary">Создать</button>
+        </div>
+    </form>
+</dialog>
+
+<script>
+    const modal = document.getElementById('createWorkerModal');
+
+    function openCreateWorkerModal() {
+        modal.showModal();
+    }
+
+    function closeCreateWorkerModal() {
+        modal.close();
+    }
+
+    modal.addEventListener('click', (e) => {
+        const dialogDimensions = modal.getBoundingClientRect();
+        if (
+            e.clientX < dialogDimensions.left ||
+            e.clientX > dialogDimensions.right ||
+            e.clientY < dialogDimensions.top ||
+            e.clientY > dialogDimensions.bottom
+        ) {
+            modal.close();
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const burgerBtn = document.getElementById('burgerBtn');
+        const navLinks = document.getElementById('navLinks');
+
+        if (burgerBtn && navLinks) {
+            burgerBtn.addEventListener('click', function() {
+                burgerBtn.classList.toggle('is-active');
+                navLinks.classList.toggle('is-open');
+            });
+
+            document.addEventListener('click', function(event) {
+                if (!burgerBtn.contains(event.target) && !navLinks.contains(event.target)) {
+                    burgerBtn.classList.remove('is-active');
+                    navLinks.classList.remove('is-open');
+                }
+            });
+        }
+    });
+</script>
+</body>
+</html>

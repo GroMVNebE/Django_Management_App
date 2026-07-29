@@ -319,6 +319,23 @@ td:last-child {
     transform: translateY(-8.5px) rotate(-45deg);
 }
 
+.btn-month {
+    display: inline-flex;
+    align-items: center;
+    margin: 4px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    background-color: #f1f5f9;
+    color: #334155;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background 0.2s;
+}
+.btn-month:hover {
+    background-color: #e2e8f0;
+}
+
 .btn-primary {
     background-color: #538aff;
     color: #ffffff;
@@ -808,6 +825,46 @@ td:last-child {
     border-radius: 6px;
     font-size: 16px;
     font-weight: 600;
+}
+
+.month-picker {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #ffffff;
+    padding: 14px 20px;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    margin: 20px 0;
+    border: 1px solid #e2e8f0;
+}
+.month-title {
+    font-weight: 700;
+    font-size: 18px;
+    color: #0f172a;
+}
+.page-actions-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.status-pill {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+}
+.status-pill.active {
+    background-color: #dcfce7;
+    color: #15803d;
+}
+.status-pill.inactive {
+    background-color: #fee2e2;
+    color: #b91c1c;
 }
 
 @media (max-width: 640px) {
