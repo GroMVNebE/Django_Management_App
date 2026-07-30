@@ -1,0 +1,440 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Детали объекта {{ object.number }}</title>
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    <style>
+        @media (max-width: 768px) {
+            .header-responsive {
+                flex-direction: column;
+                align-items: flex-start !important;
+                gap: 12px;
+            }
+
+            .header-responsive .header-actions {
+                width: 100%;
+            }
+
+            .header-responsive .header-actions .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .section-header-responsive {
+                flex-direction: column;
+                align-items: flex-start !important;
+                gap: 12px;
+            }
+
+            .section-header-responsive .actions-group {
+                width: 100%;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .section-header-responsive .actions-group .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .responsive-table standard-table,
+            .responsive-table thead {
+                display: none;
+            }
+
+            .responsive-table,
+            .responsive-table tbody,
+            .responsive-table tr,
+            .responsive-table td {
+                display: block;
+                width: 100%;
+                box-sizing: border-box;
+            }
+
+            .responsive-table tr {
+                margin-bottom: 12px;
+                background-color: #ffffff;
+                border: 1px solid #e2e8f0;
+                border-radius: 10px;
+                padding: 12px 16px;
+            }
+
+            .responsive-table td {
+                padding: 8px 0;
+                border: none;
+                border-bottom: 1px dashed #f1f5f9;
+                text-align: left !important;
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+            }
+
+            .responsive-table td:last-child {
+                border-bottom: none;
+                flex-direction: row;
+                justify-content: flex-end;
+                padding-top: 12px;
+            }
+
+            .responsive-table td::before {
+                content: attr(data-label);
+                font-size: 11px;
+                font-weight: 700;
+                text-transform: uppercase;
+                color: #64748b;
+            }
+
+            .responsive-table td:last-child::before {
+                display: none;
+            }
+
+            .modal-dialog {
+                width: calc(100% - 32px) !important;
+                max-width: 100% !important;
+                margin: auto;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <nav class="navbar" style="margin-bottom: 20px;">
+        <a href="{% url 'object_detail' object.hashid %}" class="nav-link">← Назад</a>
+    </nav>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}error{% elif message.tags == 'info' %}info{% else %}success{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <header class="header-responsive">
+        <div>
+            <h1 style="word-break: break-word;">{{ object.number }} — {{ object.title|default:"Без названия" }}</h1>
+        </div>
+        <div class="header-actions">
+            <button type="button" class="btn btn-primary" onclick="document.getElementById('editObjectModal').showModal()">
+                ✎ Редактировать инфо
+            </button>
+        </div>
+    </header>
+
+    <section class="info-card" style="margin-top: 24px; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+        <h2 style="margin-top: 0; font-size: 1.25rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; color: #334155;">
+            Детали объекта
+        </h2>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 16px;">
+            <div>
+                <strong>Название:</strong>
+                <p style="margin: 4px 0 0 0; word-break: break-word;">{{ object.title|default:"Не указано" }}</p>
+            </div>
+
+            <div>
+                <strong>Текущие статусы:</strong>
+                <div style="margin-top: 6px; display: flex; gap: 6px; flex-wrap: wrap;">
+                    {% for status in statuses %}
+                        <span class="badge" style="background-color: #eff6ff; color: #2563eb; padding: 4px 10px; border-radius: 6px; font-weight: 700; border: 1px solid #dbeafe;">
+                            {{ status.title }}
+                        </span>
+                    {% empty %}
+                        <span style="color: #94a3b8;">Статусы не назначены</span>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div style="grid-column: 1 / -1;">
+                <strong>Адрес:</strong>
+                <p style="margin: 4px 0 0 0; word-break: break-word;">{{ object.address|default:"Адрес не указан" }}</p>
+            </div>
+
+            {% if object.description %}
+            <div style="grid-column: 1 / -1;">
+                <strong>Примечание:</strong>
+                <p style="margin: 4px 0 0 0; white-space: pre-wrap; color: #475569; font-size: 14px; word-break: break-word;">{{ object.description }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <section class="info-card" style="margin-top: 24px; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+        <div class="section-header-responsive" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px;">
+            <h2 style="margin: 0; font-size: 1.25rem; color: #334155;">
+                Информация о заказчике
+            </h2>
+            <div class="actions-group" style="display: flex; gap: 8px;">
+                <button type="button" class="btn btn-secondary" onclick="document.getElementById('selectClientModal').showModal()">
+                    Выбрать
+                </button>
+                <button type="button" class="btn btn-primary" onclick="document.getElementById('createClientModal').showModal()">
+                    + Создать
+                </button>
+            </div>
+        </div>
+
+        <div style="margin-top: 16px;">
+            {% if client %}
+                <div style="margin-bottom: 20px;">
+                    <h3 style="margin: 0 0 6px 0; font-size: 1.15rem; color: #0f172a; word-break: break-word;">{{ client.title }}</h3>
+                    {% if client.description %}
+                        <p style="margin: 0; color: #64748b; white-space: pre-wrap; word-break: break-word;">{{ client.description }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="section-header-responsive" style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; margin-bottom: 12px;">
+                    <h4 style="margin: 0; font-size: 1rem; color: #334155;">Контактные лица заказчика:</h4>
+                    <div class="actions-group">
+                        <button type="button" class="btn btn-primary" style="padding: 8px 12px; font-size: 13px;" onclick="document.getElementById('addContactModal').showModal()">
+                            + Добавить
+                        </button>
+                    </div>
+                </div>
+
+                {% if contacts %}
+                    <table class="items-table responsive-table" style="width: 100%; border-collapse: collapse; margin-top: 8px;">
+                        <thead>
+                            <tr style="background-color: #f8fafc; border-bottom: 2px solid #e2e8f0; text-align: left;">
+                                <th style="padding: 10px;">ФИО</th>
+                                <th style="padding: 10px;">Телефоны</th>
+                                <th style="padding: 10px;">Email</th>
+                                <th style="padding: 10px;">Примечание</th>
+                                <th style="padding: 10px; text-align: right;">Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for contact in contacts %}
+                                <tr style="border-bottom: 1px solid #f1f5f9;">
+                                    <td data-label="ФИО" style="padding: 10px; font-weight: 600; word-break: break-word;">{{ contact.full_name }}</td>
+                                    <td data-label="Телефоны" style="padding: 10px; word-break: break-word;">{{ contact.phone_numbers|linebreaksbr }}</td>
+                                    <td data-label="Email" style="padding: 10px; word-break: break-word;">
+                                        {% if contact.email %}
+                                            <a href="mailto:{{ contact.email }}" class="nav-link">{{ contact.email }}</a>
+                                        {% else %}
+                                            <span style="color: #cbd5e1;">—</span>
+                                        {% endif %}
+                                    </td>
+                                    <td data-label="Примечание" style="padding: 10px; color: #64748b; word-break: break-word;">{{ contact.description|default:"—" }}</td>
+                                    <td data-label="Действия" style="padding: 10px; text-align: right; white-space: nowrap;">
+                                        <button type="button" class="btn btn-primary" style="padding: 6px 10px; font-size: 13px;" 
+                                                onclick="openEditContactModal('{{ contact.id }}', '{{ contact.full_name|escapejs }}', '{{ contact.phone_numbers|escapejs }}', '{{ contact.email|escapejs }}', '{{ contact.description|escapejs }}')">
+                                            ✎
+                                        </button>
+                                        <button type="button" class="btn btn-danger" style="padding: 6px 10px; font-size: 13px; margin-left: 4px;" 
+                                                onclick="openDeleteContactModal('{{ contact.id }}', '{{ contact.full_name|escapejs }}')">
+                                            ✕
+                                        </button>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p style="color: #94a3b8; font-style: italic; margin-top: 8px;">У данного заказчика нет привязанных контактных лиц</p>
+                {% endif %}
+            {% else %}
+                <p style="color: #94a3b8; font-style: italic;">Заказчик не выбран</p>
+            {% endif %}
+        </div>
+    </section>
+</div>
+
+<dialog id="editObjectModal" class="modal-dialog" style="max-width: 500px;">
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="edit_object">
+        <h3 style="margin-top: 0; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">Редактировать информацию</h3>
+        
+        <div class="form-group">
+            <label>Название объекта:</label>
+            <input type="text" name="title" class="form-control" value="{{ object.title|default:'' }}" placeholder="Введите название">
+        </div>
+
+        <div class="form-group">
+            <label>Адрес:</label>
+            <textarea name="address" class="form-control" rows="2" style="resize: vertical;">{{ object.address|default:'' }}</textarea>
+        </div>
+
+        <div class="form-group">
+            <label>Статусы объекта:</label>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; max-height: 160px; overflow-y: auto;">
+                {% for st in all_statuses %}
+                <label style="display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; text-transform: none;">
+                    <input type="checkbox" name="statuses" value="{{ st.id }}" 
+                           {% if st.id in current_status_ids %}checked{% endif %} 
+                           style="width: 18px; height: 18px; cursor: pointer;">
+                    {{ st.title }}
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Примечание:</label>
+            <textarea name="description" class="form-control" rows="3" style="resize: vertical;">{{ object.description|default:'' }}</textarea>
+        </div>
+
+        <div class="modal-actions" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; padding-top: 16px; border-top: 1px solid #e2e8f0;">
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('editObjectModal').close()">Отмена</button>
+            <button type="submit" class="btn btn-primary">Сохранить</button>
+        </div>
+    </form>
+</dialog>
+
+<dialog id="selectClientModal" class="modal-dialog" style="max-width: 450px;">
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="select_client">
+        <h3 style="margin-top: 0; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">Выбрать заказчика</h3>
+        
+        <div class="form-group">
+            <label>Выберите заказчика из списка:</label>
+            <select name="client_id" class="form-control">
+                <option value="">-- Без заказчика --</option>
+                {% for c in all_clients %}
+                    <option value="{{ c.id }}" {% if client and client.id == c.id %}selected{% endif %}>
+                        {{ c.title }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="modal-actions" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; padding-top: 16px; border-top: 1px solid #e2e8f0;">
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('selectClientModal').close()">Отмена</button>
+            <button type="submit" class="btn btn-primary">Применить</button>
+        </div>
+    </form>
+</dialog>
+
+<dialog id="createClientModal" class="modal-dialog" style="max-width: 450px;">
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="create_client">
+        <h3 style="margin-top: 0; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">Новый заказчик</h3>
+        
+        <div class="form-group">
+            <label>Название:</label>
+            <input type="text" name="title" class="form-control" required placeholder="Введите название">
+        </div>
+
+        <div class="form-group">
+            <label>Примечание:</label>
+            <textarea name="description" class="form-control" rows="3" style="resize: vertical;"></textarea>
+        </div>
+
+        <div class="modal-actions" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; padding-top: 16px; border-top: 1px solid #e2e8f0;">
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('createClientModal').close()">Отмена</button>
+            <button type="submit" class="btn btn-primary">Создать</button>
+        </div>
+    </form>
+</dialog>
+
+<dialog id="addContactModal" class="modal-dialog" style="max-width: 500px;">
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add_contact">
+        <h3 style="margin-top: 0; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">Добавить контактное лицо</h3>
+        
+        <div class="form-group">
+            <label>ФИО:</label>
+            <input type="text" name="full_name" class="form-control" required>
+        </div>
+
+        <div class="form-group">
+            <label>Номера телефонов *:</label>
+            <textarea name="phone_numbers" class="form-control" rows="2" required placeholder="+7 (800) 555-35-35"></textarea>
+        </div>
+
+        <div class="form-group">
+            <label>Email:</label>
+            <input type="email" name="email" class="form-control" placeholder="example@domain.com">
+        </div>
+
+        <div class="form-group">
+            <label>Примечание:</label>
+            <textarea name="description" class="form-control" rows="2" style="resize: vertical;"></textarea>
+        </div>
+
+        <div class="modal-actions" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; padding-top: 16px; border-top: 1px solid #e2e8f0;">
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('addContactModal').close()">Отмена</button>
+            <button type="submit" class="btn btn-primary">Добавить</button>
+        </div>
+    </form>
+</dialog>
+
+<dialog id="editContactModal" class="modal-dialog" style="max-width: 500px;">
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="edit_contact">
+        <input type="hidden" name="contact_id" id="edit_contact_id">
+        <h3 style="margin-top: 0; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">Редактировать контактное лицо</h3>
+        
+        <div class="form-group">
+            <label>ФИО:</label>
+            <input type="text" name="full_name" id="edit_contact_full_name" class="form-control" required>
+        </div>
+
+        <div class="form-group">
+            <label>Номера телефонов:</label>
+            <textarea name="phone_numbers" id="edit_contact_phone_numbers" class="form-control" rows="2" required></textarea>
+        </div>
+
+        <div class="form-group">
+            <label>Email:</label>
+            <input type="email" name="email" id="edit_contact_email" class="form-control">
+        </div>
+
+        <div class="form-group">
+            <label>Примечание:</label>
+            <textarea name="description" id="edit_contact_description" class="form-control" rows="2" style="resize: vertical;"></textarea>
+        </div>
+
+        <div class="modal-actions" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; padding-top: 16px; border-top: 1px solid #e2e8f0;">
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('editContactModal').close()">Отмена</button>
+            <button type="submit" class="btn btn-primary">Сохранить</button>
+        </div>
+    </form>
+</dialog>
+
+<dialog id="deleteContactModal" class="modal-dialog" style="max-width: 400px;">
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="delete_contact">
+        <input type="hidden" name="contact_id" id="delete_contact_id">
+        <h3 style="margin-top: 0; margin-bottom: 16px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; color: #ef4444;">Удалить контакт?</h3>
+        
+        <p>Вы действительно хотите удалить контактное лицо <strong id="delete_contact_name"></strong>?</p>
+
+        <div class="modal-actions" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; padding-top: 16px; border-top: 1px solid #e2e8f0;">
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('deleteContactModal').close()">Отмена</button>
+            <button type="submit" class="btn btn-danger">Удалить</button>
+        </div>
+    </form>
+</dialog>
+
+<script>
+function openEditContactModal(id, fullName, phones, email, description) {
+    document.getElementById('edit_contact_id').value = id;
+    document.getElementById('edit_contact_full_name').value = fullName;
+    document.getElementById('edit_contact_phone_numbers').value = phones;
+    document.getElementById('edit_contact_email').value = email;
+    document.getElementById('edit_contact_description').value = description;
+    document.getElementById('editContactModal').showModal();
+}
+
+function openDeleteContactModal(id, fullName) {
+    document.getElementById('delete_contact_id').value = id;
+    document.getElementById('delete_contact_name').textContent = fullName;
+    document.getElementById('deleteContactModal').showModal();
+}
+</script>
+
+</body>
+</html>

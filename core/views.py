@@ -11,7 +11,7 @@ from django.core.exceptions import ValidationError
 from django.db.models import Sum, F, Q, FloatField, ExpressionWrapper, Value, DecimalField
 from django.db.models.functions import Coalesce
 from decimal import Decimal
-from .models import Object, Product, ParsingBlacklist, ObjectStatus, ProductItem, Employee
+from .models import Object, Product, ParsingBlacklist, ObjectStatus, ProductItem, Employee, Client, ContactPerson
 from .utils import parse_spec, decode_id
 
 
@@ -385,6 +385,8 @@ def object_detail_view(request, hashed_id):
     referer_url = request.META.get('HTTP_REFERER')
     if not referer_url:
         referer_url = reverse('master_dashboard')
+    if 'object_extra' in referer_url:
+        referer_url = reverse('master_dashboard')
 
     products = Product.objects.filter(object=obj).prefetch_related(
         'items__employee'
@@ -405,6 +407,133 @@ def object_detail_view(request, hashed_id):
         'back_url': referer_url,
     }
     return render(request, 'object_detail.html', context)
+
+
+@login_required
+@user_passes_test(is_master, login_url='/')
+def object_extra_detail_view(request, hashed_id):
+    """Страница с подробной информацией об объекте"""
+    object_id = decode_id(hashed_id)
+    if object_id is None:
+        raise Http404("Объект не найден")
+
+    obj = get_object_or_404(
+        Object.objects.select_related('client').prefetch_related(
+            'client__contacts', 'status'),
+        pk=object_id
+    )
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+
+        if action == 'edit_object':
+            title = request.POST.get('title', '').strip()
+            address = request.POST.get('address', '').strip()
+            description = request.POST.get('description', '').strip()
+            status_ids = request.POST.getlist('statuses')
+
+            obj.title = title
+            obj.address = address
+            obj.description = description
+            obj.save()
+
+            if status_ids:
+                obj.status.set(status_ids)
+            else:
+                obj.status.clear()
+
+            messages.success(request, "Информация об объекте обновлена")
+
+        elif action == 'select_client':
+            client_id = request.POST.get('client_id')
+            if client_id:
+                client = get_object_or_404(Client, pk=client_id)
+                obj.client = client
+                messages.success(
+                    request, f"Заказчик «{client.title}» успешно привязан")
+            else:
+                obj.client = None
+                messages.info(request, "Заказчик отвязан от объекта")
+            obj.save()
+
+        elif action == 'create_client':
+            title = request.POST.get('title', '').strip()
+            description = request.POST.get('description', '').strip()
+
+            if title:
+                new_client = Client.objects.create(
+                    title=title,
+                    description=description
+                )
+                obj.client = new_client
+                obj.save()
+                messages.success(
+                    request, f"Заказчик «{new_client.title}» создан и привязан к объекту")
+            else:
+                messages.error(
+                    request, "Название заказчика не может быть пустым")
+
+        elif action == 'add_contact':
+            if obj.client:
+                full_name = request.POST.get('full_name', '').strip()
+                phone_numbers = request.POST.get('phone_numbers', '').strip()
+                email = request.POST.get('email', '').strip()
+                description = request.POST.get('description', '').strip()
+
+                if full_name:
+                    contact = ContactPerson.objects.create(
+                        full_name=full_name,
+                        phone_numbers=phone_numbers,
+                        email=email,
+                        description=description
+                    )
+                    obj.client.contacts.add(contact)
+                    messages.success(
+                        request, f"Контактное лицо «{full_name}» добавлено")
+                else:
+                    messages.error(
+                        request, "ФИО контакта не может быть пустым")
+            else:
+                messages.error(
+                    request, "Сначала необходимо привязать заказчика")
+
+        elif action == 'edit_contact':
+            contact_id = request.POST.get('contact_id')
+            contact = get_object_or_404(ContactPerson, pk=contact_id)
+
+            contact.full_name = request.POST.get('full_name', '').strip()
+            contact.phone_numbers = request.POST.get(
+                'phone_numbers', '').strip()
+            contact.email = request.POST.get('email', '').strip()
+            contact.description = request.POST.get('description', '').strip()
+            contact.save()
+
+            messages.success(
+                request, f"Контакт «{contact.full_name}» обновлен")
+
+        elif action == 'delete_contact':
+            contact_id = request.POST.get('contact_id')
+            contact = get_object_or_404(ContactPerson, pk=contact_id)
+            full_name = contact.full_name
+            contact.delete()
+            messages.success(request, f"Контактное лицо «{full_name}» удалено")
+
+        return redirect('object_extra_detail', hashed_id=hashed_id)
+
+    all_statuses = ObjectStatus.objects.all()
+    all_clients = Client.objects.all().order_by('title')
+    current_status_ids = obj.status.values_list('id', flat=True)
+
+    context = {
+        'object': obj,
+        'client': obj.client,
+        'statuses': obj.status.all(),
+        'all_statuses': all_statuses,
+        'all_clients': all_clients,
+        'current_status_ids': current_status_ids,
+        'contacts': obj.client.contacts.all() if obj.client else [],
+    }
+    return render(request, 'object_extra_detail.html', context)
 
 
 @login_required
