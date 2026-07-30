@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Работники</title>
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    <script src="{% static 'js/htmx.min.js' %}"></script>
 </head>
 <body>
 
@@ -43,39 +44,12 @@
         </a>
     </div>
 
-    {% if monthly_stats %}
-        <div class="summary-card">
-            <span>Всего выплат за месяц:</span>
-            <strong>{{ total_month_payout|floatformat:2 }} ₽</strong>
-        </div>
-
-        <table class="items-table">
-            <thead>
-                <tr>
-                    <th>Работник</th>
-                    <th style="text-align: center;">Изделий</th>
-                    <th style="text-align: right;">Заработок</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for stat in monthly_stats %}
-                <tr>
-                    <td data-label="Работник">
-                        {{ stat.employee__name|default:"Не указан" }}
-                    </td>
-                    <td data-label="Изделий" style="text-align: center;">
-                        {{ stat.total_quantity }} шт.
-                    </td>
-                    <td data-label="Заработок" style="text-align: right;">
-                        <strong>{{ stat.total_earned|floatformat:2 }} ₽</strong>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <div class="empty-state">За {{ selected_month_name|lower }} {{ selected_year }} г. нет данных о завершённых изделиях</div>
-    {% endif %}
+    <div id="workers-stats-container"
+         hx-get="{% url 'workers_stats' %}?year={{ selected_year }}&month={{ selected_month }}"
+         hx-trigger="every 5s"
+         hx-swap="innerHTML">
+        {% include 'includes/workers_stats_partial.html' %}
+    </div>
 </div>
 
 <script>

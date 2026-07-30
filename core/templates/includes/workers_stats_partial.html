@@ -1,0 +1,33 @@
+{% if monthly_stats %}
+    <div class="summary-card">
+        <span>Всего выплат за месяц:</span>
+        <strong>{{ total_month_payout|floatformat:2 }} ₽</strong>
+    </div>
+
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th>Работник</th>
+                <th style="text-align: center;">Изделий</th>
+                <th style="text-align: right;">Заработок</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for stat in monthly_stats %}
+            <tr>
+                <td data-label="Работник">
+                    {{ stat.employee__name|default:"Не указан" }}
+                </td>
+                <td data-label="Изделий" style="text-align: center;">
+                    {{ stat.total_quantity }} шт.
+                </td>
+                <td data-label="Заработок" style="text-align: right;">
+                    <strong>{{ stat.total_earned|floatformat:2 }} ₽</strong>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <div class="empty-state">За {{ selected_month_name|lower }} {{ selected_year }} г. нет данных о завершённых изделиях</div>
+{% endif %}

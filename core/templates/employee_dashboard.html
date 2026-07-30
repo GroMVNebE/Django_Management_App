@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Список изделий</title>
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    <script src="{% static 'js/htmx.min.js' %}"></script>
 </head>
 <body>
 
@@ -21,76 +22,26 @@
             </div>
         {% endfor %}
     {% endif %}
-    {% if queued_items %}
-        <div class="section-title">
-            <span>Доступные объекты в работе</span>
-            <span class="badge-count">{{  queued_items.count }}</span>
-        </div>
-        {% for item in queued_items %}
-        <div class="card">
-            <span class="object-tag">Объект № {{ item.product.object.number }}</span>
-            <div class="card-header">
-                <div>
-                    <h3 class="product-title">
-                        {{ item.product }}
-                    </h3>
-                    <div class="product-meta">
-                        Количество: <strong>{{ item.quantity }} шт.</strong>
-                    </div>
-                </div>
-            </div>
+    <div class="search-container" style="margin-bottom: 16px;">
+        <input type="text" 
+               name="q" 
+               id="productSearchInput" 
+               class="search-input" 
+               placeholder="Поиск изделий по номеру или названию"
+               value="{{ search_query }}"
+               hx-get="{% url 'employee_dashboard' %}"
+               hx-trigger="keyup changed delay:300ms"
+               hx-target="#employee-dashboard-container"
+               hx-swap="innerHTML">
+    </div>
 
-            <div class="card-actions">
-                <form method="post" action="{% url 'start_queued_item' item.id %}" style="width: 100%; text-align: right;">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-primary">Взять в работу</button>
-                </form>
-            </div>
-        </div>
-        {% endfor %}
-    {% else %}
-        <div class="section-title">
-            <span>Доступные объекты в работе</span>
-            <span class="badge-count">{{ available_products.count }}</span>
-        </div>
-
-        {% if available_products %}
-            {% for product in available_products %}
-            <div class="card">
-                <span class="object-tag">Объект № {{ product.object.number }}</span>
-                <div class="card-header">
-                    <div>
-                        <h3 class="product-title">
-                            {{ product }}
-                        </h3>
-                        <div class="product-meta">
-                            Доступно: <strong>{{ product.available_quantity|floatformat:"-1" }} шт.</strong></strong>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card-actions">
-                    <form method="post" action="{% url 'start_product_item' product.id %}" class="quantity-form">
-                        {% csrf_token %}
-                        <label for="qty_{{ product.id }}" style="font-size: 13px; color: #64748b;">Кол-во:</label>
-                        <input 
-                            type="number" 
-                            id="qty_{{ product.id }}"
-                            name="quantity" 
-                            value="{{ product.available_quantity }}" 
-                            min="0.1" 
-                            max="{{ product.available_quantity }}" 
-                            step="0.1" 
-                            class="quantity-input" 
-                            required
-                        >
-                        <button type="submit" class="btn btn-primary">Взять в работу</button>
-                    </form>
-                </div>
-            </div>
-            {% endfor %}
-        {% endif %}
-    {% endif %}
+    <div id="employee-dashboard-container"
+         hx-get="{% url 'employee_dashboard' %}"
+         hx-trigger="every 5s"
+         hx-include="#productSearchInput"
+         hx-swap="innerHTML">
+        {% include 'includes/employee_dashboard_partial.html' %}
+    </div>
 </div>
 
 </body>

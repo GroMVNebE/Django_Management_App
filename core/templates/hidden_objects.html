@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Скрытые объекты</title>
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    <script src="{% static 'js/htmx.min.js' %}"></script>
 </head>
 <body>
 
@@ -38,48 +39,26 @@
         {% endfor %}
     {% endif %}
 
-    {% if objects %}
-    <div class="search-container">
+    <div class="search-bar" style="margin-bottom: 20px;">
         <input type="text" 
+               name="q" 
                id="objectSearchInput" 
-               class="search-input" 
-               placeholder="Поиск по номеру, названию или заказчику">
+               class="form-control" 
+               placeholder="Поиск объектов по номеру, названию или названию заказчика"
+               value="{{ search_query|default:'' }}"
+               hx-get="{% url 'hidden_objects' %}"
+               hx-trigger="keyup changed delay:300ms"
+               hx-target="#hidden-objects-table-container"
+               hx-swap="innerHTML">
     </div>
-    <table>
-        <thead>
-            <tr>
-                <th>Номер объекта</th>
-                <th style="text-align: right;">Действие</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for obj in objects %}
-            <tr class="object-row" data-search="{{ obj.number|lower }} {{ obj.title|default:''|lower }} {{ obj.client.title|default:''|lower }}">
-                <td>
-                    <a href="{{ obj.get_absolute_url }}" class="object-link">
-                        {{ obj.number }}
-                    </a>
-                </td>
-                <td style="text-align: right;">
-                    <form method="post" action="{% url 'toggle_object_hidden' obj.id %}" style="display: inline;">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-secondary">
-                            Восстановить
-                        </button>
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    <div id="noResults" class="empty-state" style="display: none; margin-top: 16px;">
-        Ничего не найдено по вашему запросу
+
+    <div id="hidden-objects-table-container"
+         hx-get="{% url 'hidden_objects' %}"
+         hx-trigger="every 5s"
+         hx-include="#objectSearchInput"
+         hx-swap="innerHTML">
+        {% include 'includes/hidden_objects_table_partial.html' %}
     </div>
-    {% else %}
-    <div class="empty-state">
-        Скрытых объектов нет
-    </div>
-    {% endif %}
 </div>
 
 <script>
@@ -97,30 +76,6 @@
                 if (!burgerBtn.contains(event.target) && !navLinks.contains(event.target)) {
                     burgerBtn.classList.remove('is-active');
                     navLinks.classList.remove('is-open');
-                }
-            });
-        }
-        const searchInput = document.getElementById('objectSearchInput');
-        const rows = document.querySelectorAll('.object-row');
-        const noResults = document.getElementById('noResults');
-
-        if (searchInput) {
-            searchInput.addEventListener('input', function() {
-                const query = this.value.trim().toLowerCase();
-                let visibleCount = 0;
-
-                rows.forEach(row => {
-                    const searchData = row.getAttribute('data-search') || '';
-                    if (searchData.includes(query)) {
-                        row.style.display = '';
-                        visibleCount++;
-                    } else {
-                        row.style.display = 'none';
-                    }
-                });
-
-                if (noResults) {
-                    noResults.style.display = visibleCount === 0 ? 'block' : 'none';
                 }
             });
         }

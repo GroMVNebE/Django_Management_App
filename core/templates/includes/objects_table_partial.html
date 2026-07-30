@@ -1,0 +1,33 @@
+{% if objects %}
+<table>
+    <thead>
+        <tr>
+            <th>Номер объекта</th>
+            <th>Готовность</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for obj in objects %}
+        <tr>
+            <td>
+                <a href="{{ obj.get_absolute_url }}" class="object-link">
+                    {{ obj.number }}
+                </a>
+            </td>
+            <td>
+                <div class="progress-container">
+                    <div class="progress-track">
+                        <div class="progress-bar" style="width: {{ obj.progress_percentage }}%;"></div>
+                    </div>
+                    <span class="progress-text">{{ obj.progress_percentage }}%</span>
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="empty-state">
+    <p>Объекты не найдены. Импортируйте данные из спецификации или измените поисковый запрос</p>
+</div>
+{% endif %}

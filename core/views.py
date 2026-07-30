@@ -9,7 +9,7 @@ from django.contrib.auth.models import User, Group
 from django.views.decorators.http import require_POST
 from django.core.exceptions import ValidationError
 from django.db.models import Sum, F, Q, FloatField, ExpressionWrapper, Value, DecimalField
-from django.db.models.functions import Coalesce
+from django.db.models.functions import Coalesce, Concat
 from decimal import Decimal
 from .models import Object, Product, ParsingBlacklist, ObjectStatus, ProductItem, Employee, Client, ContactPerson
 from .utils import parse_spec, decode_id
@@ -63,6 +63,7 @@ def index(request):
 @user_passes_test(is_master, login_url='/')
 def master_dashboard(request):
     """Главная страница для мастера со списком всех объектов"""
+    query = request.GET.get('q', '').strip()
     objects_list = Object.objects.annotate(
         total_payment=Coalesce(
             Sum(
@@ -74,6 +75,12 @@ def master_dashboard(request):
             Value(0.0)
         )
     ).filter(is_hidden=False).select_related('client')
+    if query:
+        objects_list = objects_list.filter(
+            Q(number__icontains=query) |
+            Q(client__title__icontains=query) |
+            Q(title__icontains=query)
+        ).distinct()
 
     for obj in objects_list:
         completed_items = ProductItem.objects.filter(
@@ -97,7 +104,10 @@ def master_dashboard(request):
 
     context = {
         'objects': objects_list,
+        'search_query': query,
     }
+    if request.headers.get('HX-Request'):
+        return render(request, 'includes/objects_table_partial.html', context)
     return render(request, 'master_dashboard.html', context)
 
 
@@ -122,6 +132,8 @@ def items_in_work(request):
         'in_progress_items': in_progress_items,
         'queued_items': queued_items,
     }
+    if request.headers.get('HX-Request'):
+        return render(request, 'includes/items_in_work_partial.html', context)
     return render(request, 'items_in_work.html', context)
 
 
@@ -390,10 +402,22 @@ def object_detail_view(request, hashed_id):
             referer_url = reverse('hidden_objects')
         else:
             referer_url = reverse('master_dashboard')
-
+    else:
+        if 'items-in-work' in referer_url:
+            referer_url = reverse('items_in_work')
+        elif 'hidden-objects' in referer_url:
+            referer_url = reverse('hidden_objects')
+        else:
+            referer_url = reverse('master_dashboard')
+    query = request.GET.get('q', '').strip()
     products = Product.objects.filter(object=obj).prefetch_related(
         'items__employee'
     )
+    if query:
+        products = products.annotate(full_name=Concat('title', Value(' '), 'part_name')).filter(
+            Q(product_number__icontains=query) |
+            Q(full_name__icontains=query)
+        ).distinct()
 
     has_product_items = ProductItem.objects.filter(
         product__object=obj).exists()
@@ -408,7 +432,10 @@ def object_detail_view(request, hashed_id):
         'is_in_work': is_in_work,
         'employees': employees,
         'back_url': referer_url,
+        'search_query': query,
     }
+    if request.headers.get('HX-Request'):
+        return render(request, 'includes/object_detail_partial.html', context)
     return render(request, 'object_detail.html', context)
 
 
@@ -543,8 +570,21 @@ def object_extra_detail_view(request, hashed_id):
 @user_passes_test(is_master, login_url='/')
 def hidden_objects(request):
     """Страница скрытых объектов"""
+    query = request.GET.get('q', '').strip()
     objects = Object.objects.filter(is_hidden=True).select_related('client')
-    return render(request, 'hidden_objects.html', {'objects': objects})
+    if query:
+        objects = objects.filter(
+            Q(number__icontains=query) |
+            Q(client__title__icontains=query) |
+            Q(title__icontains=query)
+        ).distinct()
+    context = {
+        'objects': objects,
+        'search_query': query,
+    }
+    if request.headers.get('HX-Request'):
+        return render(request, 'includes/hidden_objects_table_partial.html', context)
+    return render(request, 'hidden_objects.html', context)
 
 
 MONTH_NAMES = {
@@ -614,6 +654,8 @@ def workers_stats(request):
         'next_year': next_year,
         'next_month': next_month,
     }
+    if request.headers.get('HX-Request'):
+        return render(request, 'includes/workers_stats_partial.html', context)
     return render(request, 'workers_stats.html', context)
 
 
@@ -645,6 +687,8 @@ def all_workers_stats(request):
     context = {
         'employees_stats': employees_stats,
     }
+    if request.headers.get('HX-Request'):
+        return render(request, 'includes/all_workers_partial.html', context)
     return render(request, 'all_workers.html', context)
 
 
@@ -786,7 +830,7 @@ def start_product_item(request, product_id):
 @user_passes_test(is_worker, login_url='/')
 def employee_dashboard(request):
     """Страница рабочего: список изделий в работе и в очереди"""
-
+    query = request.GET.get('q', '').strip()
     in_work_objects = Object.objects.filter(status__title="В работе")
 
     available_products = Product.objects.filter(
@@ -806,6 +850,14 @@ def employee_dashboard(request):
         calculated_available_quantity__gt=0
     ).select_related('object').order_by('product_number')
 
+    if query:
+        available_products = available_products.annotate(
+            full_name=Concat('title', Value(' '), 'part_name')
+        ).filter(
+            Q(product_number__icontains=query) |
+            Q(full_name__icontains=query)
+        ).distinct()
+
     queued_items = ProductItem.objects.filter(
         status=ProductItem.StatusChoices.QUEUED,
         employee__user=request.user
@@ -814,7 +866,10 @@ def employee_dashboard(request):
     context = {
         'available_products': available_products,
         'queued_items': queued_items,
+        'search_query': query,
     }
+    if request.headers.get('HX-Request'):
+        return render(request, 'includes/employee_dashboard_partial.html', context)
     return render(request, 'employee_dashboard.html', context)
 
 

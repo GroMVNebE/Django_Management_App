@@ -1,0 +1,80 @@
+{% if products %}
+    {% for product in products %}
+    <div class="product-card">
+        <div class="product-header">
+            <div class="product-header-top">
+                <div class="product-title">
+                    {{ product }}
+                </div>
+                {% if product.available_quantity > 0 %}
+                    <button 
+                        type="button" 
+                        class="btn btn-primary btn-sm assign-btn"
+                        onclick="openAssignModal('{{ product.id }}', '{{ product.product_number }} — {{ product.title|escapejs }}', '{{ product.available_quantity }}')"
+                    >
+                        + Назначить работника
+                    </button>
+                {% endif %}
+            </div>
+
+            <div class="product-qty">
+                <span>Доступно: <strong>{{ product.available_quantity|floatformat:"-1" }}</strong> / {{ product.quantity }} шт.</span>
+                <span class="divider">|</span>
+                <span>Оплата: <strong>{{ product.payment }} ₽</strong></span>
+            </div>
+        </div>
+
+        {% if product.items.all %}
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th>Кол-во</th>
+                    <th>Работник</th>
+                    <th>Статус</th>
+                    <th>Дата начала</th>
+                    <th>Дата окончания</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in product.items.all %}
+                <tr>
+                    <td data-label="Кол-во">{{ item.quantity }} шт.</td>
+                    <td data-label="Работник">
+                        {% if item.employee %}
+                            {{ item.employee }}
+                        {% else %}
+                            <span style="color: #94a3b8;">Не назначен</span>
+                        {% endif %}
+                    </td>
+                    <td data-label="Статус">
+                        <span class="status-badge status-{{ item.status }}">
+                            {{ item.get_status_display }}
+                        </span>
+                    </td>
+                    <td data-label="Начало" class="date-td">
+                        {{ item.start_time|date:"d.m.Y H:i"|default:"—" }}
+                    </td>
+                    <td data-label="Окончание" class="date-td">
+                        {{ item.end_time|date:"d.m.Y H:i"|default:"—" }}
+                    </td>
+                    <td style="text-align: right;">
+                        {% if item.status != 'completed' %}
+                            <form method="post" action="{% url 'complete_product_item' item.id %}" style="display: inline-block;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-success btn-sm" title="Отметить как завершенное" onclick="return confirm('Отметить экземпляр как завершённый?');">
+                                    ✓ Завершить
+                                </button>
+                            </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+    </div>
+    {% endfor %}
+{% else %}
+    <p style="color: #64748b; text-align: center; padding: 40px 0;">Изделия не найдены</p>
+{% endif %}

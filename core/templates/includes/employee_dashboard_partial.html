@@ -1,0 +1,65 @@
+<div class="section-title">
+    <span>Доступные объекты в работе</span>
+    <span class="badge-count">{% if queued_items %}{{  queued_items.count }}{% else %}{{ available_products.count }}{% endif %}</span>
+</div>
+{% if queued_items %}
+    {% for item in queued_items %}
+    <div class="card">
+        <span class="object-tag">Объект № {{ item.product.object.number }}</span>
+        <div class="card-header">
+            <div>
+                <h3 class="product-title">
+                    {{ item.product }}
+                </h3>
+                <div class="product-meta">
+                    Количество: <strong>{{ item.quantity }} шт.</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-actions">
+            <form method="post" action="{% url 'start_queued_item' item.id %}" style="width: 100%; text-align: right;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary">Взять в работу</button>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    {% if available_products %}
+        {% for product in available_products %}
+        <div class="card">
+            <span class="object-tag">Объект № {{ product.object.number }}</span>
+            <div class="card-header">
+                <div>
+                    <h3 class="product-title">
+                        {{ product }}
+                    </h3>
+                    <div class="product-meta">
+                        Доступно: <strong>{{ product.available_quantity|floatformat:"-1" }} шт.</strong></strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-actions">
+                <form method="post" action="{% url 'start_product_item' product.id %}" class="quantity-form">
+                    {% csrf_token %}
+                    <label for="qty_{{ product.id }}" style="font-size: 13px; color: #64748b;">Кол-во:</label>
+                    <input 
+                        type="number" 
+                        id="qty_{{ product.id }}"
+                        name="quantity" 
+                        value="{{ product.available_quantity }}" 
+                        min="0.1" 
+                        max="{{ product.available_quantity }}" 
+                        step="0.1" 
+                        class="quantity-input" 
+                        required
+                    >
+                    <button type="submit" class="btn btn-primary">Взять в работу</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    {% endif %}
+{% endif %}
