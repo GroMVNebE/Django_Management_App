@@ -866,6 +866,23 @@ td:last-child {
     background-color: #fee2e2;
     color: #b91c1c;
 }
+.search-container {
+    margin-bottom: 20px;
+}
+.search-input {
+    width: 100%;
+    padding: 10px 14px;
+    font-size: 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+}
+.search-input:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
 
 @media (max-width: 640px) {
     body {

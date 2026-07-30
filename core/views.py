@@ -73,7 +73,7 @@ def master_dashboard(request):
             ),
             Value(0.0)
         )
-    ).filter(is_hidden=False)
+    ).filter(is_hidden=False).select_related('client')
 
     for obj in objects_list:
         completed_items = ProductItem.objects.filter(
@@ -386,7 +386,10 @@ def object_detail_view(request, hashed_id):
     if not referer_url:
         referer_url = reverse('master_dashboard')
     if 'object_extra' in referer_url:
-        referer_url = reverse('master_dashboard')
+        if obj.is_hidden:
+            referer_url = reverse('hidden_objects')
+        else:
+            referer_url = reverse('master_dashboard')
 
     products = Product.objects.filter(object=obj).prefetch_related(
         'items__employee'
@@ -540,7 +543,7 @@ def object_extra_detail_view(request, hashed_id):
 @user_passes_test(is_master, login_url='/')
 def hidden_objects(request):
     """Страница скрытых объектов"""
-    objects = Object.objects.filter(is_hidden=True)
+    objects = Object.objects.filter(is_hidden=True).select_related('client')
     return render(request, 'hidden_objects.html', {'objects': objects})
 
 
