@@ -77,5 +77,18 @@
     </div>
     {% endfor %}
 {% else %}
-    <p style="color: #64748b; text-align: center; padding: 40px 0;">Изделия не найдены</p>
+    {% if not has_any_products %}
+        <div class="empty-import-box">
+            <h3 style="margin-top: 0; margin-bottom: 8px; color: #334155;">В объекте пока нет изделий</h3>
+            <p style="color: #64748b; margin-bottom: 20px; font-size: 16px;"> Вы можете загрузить файл спецификации, чтобы автоматически импортировать изделия в этот объект</p>
+            
+            <button type="button" class="btn btn-primary" onclick="openImportModal()">
+                Импорт изделий
+            </button>
+        </div>
+    {% else %}
+        <p style="color: #64748b; text-align: center; padding: 40px 0;">
+            По запросу «{{ search_query }}» изделия не найдены
+        </p>
+    {% endif %}
 {% endif %}

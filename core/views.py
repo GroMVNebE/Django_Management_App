@@ -143,6 +143,7 @@ def import_objects_view(request):
     """Страница импорта объектов из Excel."""
     if request.method == 'POST':
         excel_file = request.FILES.get('excel_file')
+        object_id = request.POST.get('object_id')
 
         if not excel_file:
             messages.error(request, 'Пожалуйста, выберите файл для загрузки.')
@@ -161,9 +162,16 @@ def import_objects_view(request):
                 request, f'При парсинге файла произошла ошибка: {e}')
             return render(request, 'import_objects.html')
 
-        object = Object.objects.create(number=object_number)
-        in_queue_status = ObjectStatus.objects.get(title="Приостановлен")
-        object.status.add(in_queue_status)
+        if object_id:
+            object = get_object_or_404(Object, pk=object_id)
+            if object.number != object_number:
+                messages.error(
+                    request, f'Номер текущего объекта ({object.number}) не совпадает с номером в спецификации ({object_number})')
+                return redirect('object_detail', hashed_id=object.hashid)
+        else:
+            object = Object.objects.create(number=object_number)
+            in_queue_status = ObjectStatus.objects.get(title="Приостановлен")
+            object.status.add(in_queue_status)
         product_number = '1'
         number_len = len(str(len(products)))
         for product in products:
@@ -179,6 +187,8 @@ def import_objects_view(request):
                     Product.objects.create(
                         object=object, product_number=product.number, title=product.name, part_name=part.name, quantity=1, payment=part.payment)
             product_number = str(int(product_number)+1)
+        if object_id:
+            return redirect('object_detail', hashed_id=object.hashid)
         context = dict()
         context['products'] = Product.objects.filter(object=object)
         context['object'] = object
@@ -388,6 +398,32 @@ def toggle_object_hidden(request, object_id):
 
 @login_required
 @user_passes_test(is_master, login_url='/')
+@require_POST
+def create_empty_object_view(request):
+    """Создание пустого объекта"""
+    number = request.POST.get('number', '').strip()
+    title = request.POST.get('title', '').strip()
+
+    if not number:
+        messages.error(request, 'Номер объекта обязателен для заполнения')
+        return redirect('master_dashboard')
+
+    obj = Object.objects.create(
+        number=number,
+        title=title
+    )
+
+    in_queue_status = ObjectStatus.objects.filter(
+        title="Приостановлен").first()
+    if in_queue_status:
+        obj.status.add(in_queue_status)
+
+    messages.success(request, f'Пустой объект № {obj.number} успешно создан!')
+    return redirect('master_dashboard')
+
+
+@login_required
+@user_passes_test(is_master, login_url='/')
 def object_detail_view(request, hashed_id):
     """Страница деталей объекта со списком изделий и их экземпляров"""
     object_id = decode_id(hashed_id)
@@ -413,6 +449,7 @@ def object_detail_view(request, hashed_id):
     products = Product.objects.filter(object=obj).prefetch_related(
         'items__employee'
     )
+    total_products_count = products.count()
     if query:
         products = products.annotate(full_name=Concat('title', Value(' '), 'part_name')).filter(
             Q(product_number__icontains=query) |
@@ -421,7 +458,7 @@ def object_detail_view(request, hashed_id):
 
     has_product_items = ProductItem.objects.filter(
         product__object=obj).exists()
-    is_in_work = obj.status.filter(title="В работе").exists()
+    is_in_work = obj.status.filter(title="В сборке").exists()
 
     employees = Employee.objects.all()
 
@@ -433,6 +470,7 @@ def object_detail_view(request, hashed_id):
         'employees': employees,
         'back_url': referer_url,
         'search_query': query,
+        'has_any_products': total_products_count > 0,
     }
     if request.headers.get('HX-Request'):
         return render(request, 'includes/object_detail_partial.html', context)

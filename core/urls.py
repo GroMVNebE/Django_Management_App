@@ -17,6 +17,8 @@ urlpatterns = [
          views.toggle_object_status_view, name='toggle_object_status'),
     path('master/object/<int:object_id>/delete/',
          views.delete_object_view, name='delete_object'),
+    path('objects/create/', views.create_empty_object_view,
+         name='create_empty_object'),
     path('master/product/<int:product_id>/assign/',
          views.assign_worker_view, name='assign_worker'),
     path('master/item/<int:item_id>/complete/',

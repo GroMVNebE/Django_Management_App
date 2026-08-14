@@ -44,6 +44,9 @@
 
     <header>
         <h1>Объекты в работе</h1>
+        <button type="button" class="btn btn-primary" onclick="openCreateModal()">
+            + Добавить пустой объект
+        </button>
     </header>
     <div class="search-container">
         <input type="text" 
@@ -64,9 +67,36 @@
         hx-swap="innerHTML">
         {% include 'includes/objects_table_partial.html' %}
     </div>
+
+    <div class="modal" id="createObjectModal">
+        <div class="modal-content">
+            <h2>Добавить объект</h2>
+            <form method="post" action="{% url 'create_empty_object' %}">
+                {% csrf_token %}
+                <div style="margin-bottom: 12px;">
+                    <label for="id_number" style="display:block; margin-bottom: 4px;">Номер объекта *</label>
+                    <input type="text" id="id_number" name="number" required placeholder="Например: 1234-56" class="search-input" style="width: 100%;">
+                </div>
+                <div style="margin-bottom: 16px;">
+                    <label for="id_title" style="display:block; margin-bottom: 4px;">Название (опционально)</label>
+                    <input type="text" id="id_title" name="title" placeholder="Название объекта" class="search-input" style="width: 100%;">
+                </div>
+                <div style="text-align: right; gap: 8px; display: flex; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" onclick="closeCreateModal()">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Создать</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 
 <script>
+    function openCreateModal() {
+        document.getElementById('createObjectModal').classList.add('is-open');
+    }
+    function closeCreateModal() {
+        document.getElementById('createObjectModal').classList.remove('is-open');
+    }
     document.addEventListener('DOMContentLoaded', function() {
         const burgerBtn = document.getElementById('burgerBtn');
         const navLinks = document.getElementById('navLinks');

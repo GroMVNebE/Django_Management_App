@@ -127,12 +127,42 @@
     </form>
 </dialog>
 
+<dialog id="importModal" class="modal-dialog">
+    <form method="post" action="{% url 'import_objects' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <h3 style="margin-top: 0; margin-bottom: 12px;">Импорт спецификации</h3>
+        <p style="color: #64748b; font-size: 14px; margin-bottom: 16px;">
+            Выберите файл Excel (.xlsx, .xls, .xlsm), чтобы добавить изделия в объект № {{ object.number }}
+        </p>
+
+        <input type="hidden" name="object_id" value="{{ object.id }}">
+        
+        <div style="margin-bottom: 20px;">
+            <input type="file" name="excel_file" accept=".xlsx, .xls, .xlsm" required class="form-control" style="width: 100%;">
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 8px;">
+            <button type="button" class="btn btn-danger" onclick="closeImportModal()">Отмена</button>
+            <button type="submit" class="btn btn-primary">Загрузить</button>
+        </div>
+    </form>
+</dialog>
+
 <script>
     const assignModal = document.getElementById('assignModal');
     const assignForm = document.getElementById('assignForm');
     const modalProductTitle = document.getElementById('modalProductTitle');
     const modalQuantity = document.getElementById('modalQuantity');
     const modalMaxQty = document.getElementById('modalMaxQty');
+    const importModal = document.getElementById('importModal');
+
+    function openImportModal() {
+        if (importModal) importModal.showModal();
+    }
+
+    function closeImportModal() {
+        if (importModal) importModal.close();
+    }
 
     function openAssignModal(productId, productTitle, availableQty) {
         assignForm.action = `/master/product/${productId}/assign/`;
