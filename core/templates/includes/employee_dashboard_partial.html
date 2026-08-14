@@ -1,6 +1,6 @@
 <div class="section-title">
     <span>Доступные объекты в работе</span>
-    <span class="badge-count">{% if queued_items %}{{  queued_items.count }}{% else %}{{ available_products.count }}{% endif %}</span>
+    <span class="badge-count">{% if queued_items %}{{  queued_items|length }}{% else %}{{ available_products|length }}{% endif %}</span>
 </div>
 {% if queued_items %}
     {% for item in queued_items %}
@@ -36,7 +36,7 @@
                         {{ product }}
                     </h3>
                     <div class="product-meta">
-                        Доступно: <strong>{{ product.available_quantity|floatformat:"-1" }} шт.</strong></strong>
+                        Доступно: <strong>{{ product.available_qty|floatformat:"-1" }} шт.</strong></strong>
                     </div>
                 </div>
             </div>

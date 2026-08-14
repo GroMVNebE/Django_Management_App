@@ -831,19 +831,19 @@ def employee_dashboard(request):
 
     available_products = Product.objects.filter(
         object__in=in_work_objects
-    ).prefetch_related('items').annotate(
+    ).annotate(
         used_quantity=Coalesce(
             Sum('items__quantity'),
             Value(Decimal('0.0')),
             output_field=DecimalField()
         )
     ).annotate(
-        calculated_available_quantity=ExpressionWrapper(
+        available_qty=ExpressionWrapper(
             F('quantity') - F('used_quantity'),
             output_field=DecimalField()
         )
     ).filter(
-        calculated_available_quantity__gt=0
+        available_qty__gt=0
     ).select_related('object').order_by('product_number')
 
     if query:
