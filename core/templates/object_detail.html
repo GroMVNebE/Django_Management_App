@@ -95,7 +95,7 @@
         <h3 style="margin-top: 0; margin-bottom: 12px;" id="modalProductTitle">Назначить работника</h3>
         
         <div style="margin-bottom: 16px;">
-            <label for="employeeSelect" style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px;">Выберите работника:</label>
+            <label for="employeeSelect" style="display: block; font-size: 16px; font-weight: 600; margin-bottom: 6px;">Выберите работника:</label>
             <select name="employee_id" id="employeeSelect" class="form-control" required style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1;">
                 <option value="" disabled selected>-- Выберите из списка --</option>
                 {% for emp in employees %}
@@ -105,7 +105,7 @@
         </div>
 
         <div style="margin-bottom: 20px;">
-            <label for="modalQuantity" style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px;">Количество:</label>
+            <label for="modalQuantity" style="display: block; font-size: 16px; font-weight: 600; margin-bottom: 6px;">Количество:</label>
             <input 
                 type="number" 
                 name="quantity" 
@@ -117,7 +117,7 @@
                 required 
                 style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1;"
             >
-            <small style="color: #64748b; font-size: 12px;">Максимально доступно: <span id="modalMaxQty"></span> шт.</small>
+            <small style="color: #64748b; font-size: 16px;">Максимально доступно: <span id="modalMaxQty"></span> шт.</small>
         </div>
 
         <div style="display: flex; justify-content: flex-end; gap: 8px;">

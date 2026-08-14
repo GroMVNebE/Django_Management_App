@@ -181,6 +181,12 @@ class ProductItem(models.Model):
         verbose_name="Работник"
     )
 
+    @property
+    def total_payment(self):
+        if self.product and self.product.payment and self.quantity:
+            return self.product.payment * self.quantity
+        return 0
+
     def __str__(self):
         return f"{self.product} {self.employee}"
 

@@ -1,3 +1,14 @@
+<style>
+    .quantity-col {
+        width: 10%;
+    }
+    .payment-col {
+        width: 15%;
+    }
+    .worker-col {
+        width: 20%;
+    }
+</style>
 {% if products %}
     {% for product in products %}
     <div class="product-card">
@@ -16,21 +27,15 @@
                     </button>
                 {% endif %}
             </div>
-
-            <div class="product-qty">
-                <span>Доступно: <strong>{{ product.available_quantity|floatformat:"-1" }}</strong> / {{ product.quantity }} шт.</span>
-                <span class="divider">|</span>
-                <span>Оплата: <strong>{{ product.payment }} ₽</strong></span>
-            </div>
         </div>
 
         {% if product.items.all %}
         <table class="items-table">
             <thead>
                 <tr>
-                    <th>Кол-во</th>
-                    <th>Работник</th>
-                    <th>Статус</th>
+                    <th class="quantity-col">Кол-во</th>
+                    <th class="payment-col">Оплата</th>
+                    <th class="worker-col">Работник</th>
                     <th>Дата начала</th>
                     <th>Дата окончания</th>
                     <th></th>
@@ -39,18 +44,14 @@
             <tbody>
                 {% for item in product.items.all %}
                 <tr>
-                    <td data-label="Кол-во">{{ item.quantity }} шт.</td>
+                    <td data-label="Кол-во">{{ item.quantity|floatformat:"-1" }}/{{ product.quantity|floatformat:"-1" }} шт.</td>
+                    <td data-label="Оплата">{{ item.total_payment }} ₽</td>
                     <td data-label="Работник">
                         {% if item.employee %}
                             {{ item.employee }}
                         {% else %}
                             <span style="color: #94a3b8;">Не назначен</span>
                         {% endif %}
-                    </td>
-                    <td data-label="Статус">
-                        <span class="status-badge status-{{ item.status }}">
-                            {{ item.get_status_display }}
-                        </span>
                     </td>
                     <td data-label="Начало" class="date-td">
                         {{ item.start_time|date:"d.m.Y H:i"|default:"—" }}
@@ -60,7 +61,7 @@
                     </td>
                     <td style="text-align: right;">
                         {% if item.status != 'completed' %}
-                            <form method="post" action="{% url 'complete_product_item' item.id %}" style="display: inline-block;">
+                            <form method="post" action="{% url 'complete_product_item' item.id %}" style="display: inline-block;" class="complete-form">
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-success btn-sm" title="Отметить как завершенное" onclick="return confirm('Отметить экземпляр как завершённый?');">
                                     ✓ Завершить
