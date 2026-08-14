@@ -6,6 +6,8 @@ from django.urls import reverse
 from .utils import encode_id
 from decimal import Decimal
 
+# NEW
+
 
 class Client(models.Model):
     """Модель заказчика"""

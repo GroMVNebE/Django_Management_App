@@ -162,7 +162,7 @@ def import_objects_view(request):
             return render(request, 'import_objects.html')
 
         object = Object.objects.create(number=object_number)
-        in_queue_status = ObjectStatus.objects.get(title="В очереди")
+        in_queue_status = ObjectStatus.objects.get(title="Приостановлен")
         object.status.add(in_queue_status)
         product_number = '1'
         number_len = len(str(len(products)))
@@ -235,8 +235,8 @@ def toggle_object_status_view(request, object_id):
     """Переключение статуса объекта между 'В работе' и 'В очереди'"""
     obj = get_object_or_404(Object, pk=object_id)
 
-    in_work_status = ObjectStatus.objects.get(title="В работе")
-    in_queue_status = ObjectStatus.objects.get(title="В очереди")
+    in_work_status = ObjectStatus.objects.get(title="В сборке")
+    in_queue_status = ObjectStatus.objects.get(title="Приостановлен")
 
     if in_work_status in obj.status.all():
         obj.status.remove(in_work_status)
@@ -704,13 +704,9 @@ def create_worker(request):
         messages.error(request, 'Заполните все поля')
         return redirect('all_workers')
 
-    import uuid
-    username = f"worker_{uuid.uuid4().hex[:8]}"
-
     user = User.objects.create_user(
-        username=username,
+        username=name,
         password=password,
-        first_name=name
     )
 
     worker_group, _ = Group.objects.get_or_create(name='worker')
@@ -831,11 +827,11 @@ def start_product_item(request, product_id):
 def employee_dashboard(request):
     """Страница рабочего: список изделий в работе и в очереди"""
     query = request.GET.get('q', '').strip()
-    in_work_objects = Object.objects.filter(status__title="В работе")
+    in_work_objects = Object.objects.filter(status__title="В сборке")
 
     available_products = Product.objects.filter(
         object__in=in_work_objects
-    ).annotate(
+    ).prefetch_related('items').annotate(
         used_quantity=Coalesce(
             Sum('items__quantity'),
             Value(Decimal('0.0')),
