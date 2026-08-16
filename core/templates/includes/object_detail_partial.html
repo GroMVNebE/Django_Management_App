@@ -47,11 +47,7 @@
                     <td data-label="Кол-во">{{ item.quantity|floatformat:"-1" }}/{{ product.quantity|floatformat:"-1" }} шт.</td>
                     <td data-label="Оплата">{{ item.total_payment }} ₽</td>
                     <td data-label="Работник">
-                        {% if item.employee %}
-                            {{ item.employee }}
-                        {% else %}
-                            <span style="color: #94a3b8;">Не назначен</span>
-                        {% endif %}
+                        <a href="{{ item.employee.get_absolute_url }}" class="object-tag">{{ item.employee }}</a>
                     </td>
                     <td data-label="Начало" class="date-td">
                         {{ item.start_time|date:"d.m.Y H:i"|default:"—" }}

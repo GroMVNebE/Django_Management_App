@@ -19,9 +19,7 @@
                     <span>Количество: <strong>{{ item.quantity }} шт.</strong></span>
                     <span class="divider">|</span>
                     <span>Работник: 
-                        <span class="employee-badge">
-                            {% if item.employee %}{{ item.employee }}{% else %}Не назначен{% endif %}
-                        </span>
+                        <a href="{{ item.employee.get_absolute_url }}" class="object-tag">{{ item.employee }}</a>
                     </span>
                     <span class="divider">|</span>
                     <span>Начало: {{ item.start_time|date:"d.m.Y H:i"|default:"—" }}</span>
@@ -64,9 +62,7 @@
                     <span>Количество: <strong>{{ item.quantity }} шт.</strong></span>
                     <span class="divider">|</span>
                     <span>Назначен: 
-                        <span class="employee-badge">
-                            {% if item.employee %}{{ item.employee }}{% else %}Не назначен{% endif %}
-                        </span>
+                        <a href="{{ item.employee.get_absolute_url }}" class="object-tag">{{ item.employee }}</a>
                     </span>
                 </div>
             </div>

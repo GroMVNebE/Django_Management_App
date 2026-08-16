@@ -138,6 +138,13 @@ class Employee(models.Model):
         verbose_name="Пользователь Django"
     )
 
+    @property
+    def hashid(self):
+        return encode_id(self.pk)
+
+    def get_absolute_url(self):
+        return reverse('worker_detail', kwargs={'hashed_id': self.hashid})
+
     def __str__(self):
         return self.name
 

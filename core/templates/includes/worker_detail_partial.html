@@ -1,0 +1,123 @@
+<div class="month-navigator" style="display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+    <a href="?year={{ prev_year }}&month={{ prev_month }}" 
+       class="btn btn-secondary"
+       hx-get="{% url 'worker_detail' employee.hashid %}?year={{ prev_year }}&month={{ prev_month }}"
+       hx-target="#worker-detail-container"
+       hx-swap="innerHTML"
+       style="margin-right: 10px">
+        ← Пред.
+    </a>
+
+    <h2 style="margin: 0; font-size: 1.25rem;">
+        {{ selected_month_name }} {{ selected_year }}
+    </h2>
+
+    <a href="?year={{ next_year }}&month={{ next_month }}" 
+       class="btn btn-secondary"
+       hx-get="{% url 'worker_detail' employee.hashid %}?year={{ next_year }}&month={{ next_month }}"
+       hx-target="#worker-detail-container"
+       hx-swap="innerHTML"
+       style="margin-left: 10px">
+        След. →
+    </a>
+</div>
+
+<div class="stats-summary" style="display: flex; gap: 16px; margin-bottom: 24px;">
+    <div style="background: #f1f5f9; padding: 16px; border-radius: 8px; flex: 1;">
+        <span style="color: #64748b; font-size: 14px;">Изготовлено изделий:</span>
+        <div style="font-size: 20px; font-weight: bold; color: #0f172a;">{{ total_quantity|floatformat:"-1" }} шт.</div>
+    </div>
+    <div style="background: #f1f5f9; padding: 16px; border-radius: 8px; flex: 1;">
+        <span style="color: #64748b; font-size: 14px;">Оплата:</span>
+        <div style="font-size: 20px; font-weight: bold; color: #0f172a;">{{ total_earned }} ₽</div>
+    </div>
+</div>
+
+{% if items %}
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th>Объект</th>
+                <th>Изделие</th>
+                <th>Кол-во</th>
+                <th>Дата начала</th>
+                <th>Дата окончания</th>
+                <th>Оплата</th>
+                <th>Действие</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>
+                    <a href="{{ item.product.object.get_absolute_url }}" class="object-tag">
+                        Объект № {{ item.product.object.number }}
+                    </a>
+                </td>
+                <td>{{ item.product }}</td>
+                <td data-label="Кол-во">{{ item.quantity|floatformat:"-1" }} шт.</td>
+                <td data-label="Начало">{{ item.start_time|date:"d.m.Y H:i"|default:"—" }}</td>
+                <td data-label="Окончание">{{ item.end_time|date:"d.m.Y H:i"|default:"—" }}</td>
+                <td data-label="Оплата"><strong>{{ item.total_payment }} ₽</strong></td>
+                <td>
+                    {% if item.status != 'completed' %}
+                        <form action="{% url 'complete_product_item' item.id %}" method="post" style="margin: 0; display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" 
+                                    class="btn btn-primary">
+                                Завершить
+                            </button>
+                        </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p style="color: #64748b; text-align: center; padding: 40px 0;">
+        В выбранном месяце работник не изготавливал изделия
+    </p>
+{% endif %}
+{% if queued_items %}
+    <div style="margin-top: 24px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px;">
+        <h3 style="margin-top: 0; margin-bottom: 12px; font-size: 1.1rem; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+            <span>Изделия в очереди</span>
+            <span style="font-size: 0.85rem; background: #e2e8f0; color: #475569; padding: 2px 8px; border-radius: 12px;">{{ queued_items|length }}</span>
+        </h3>
+        <table class="items-table" style="margin-bottom: 0; background: white;">
+            <thead>
+                <tr>
+                    <th>Объект</th>
+                    <th>Изделие</th>
+                    <th>Кол-во</th>
+                    <th>Оплата</th>
+                    <th>Действие</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for q_item in queued_items %}
+                <tr>
+                    <td>
+                        <a href="{{ q_item.product.object.get_absolute_url }}" class="object-tag">
+                            Объект № {{ q_item.product.object.number }}
+                        </a>
+                    </td>
+                    <td>{{ q_item.product }}</td>
+                    <td data-label="Кол-во">{{ q_item.quantity|floatformat:"-1" }} шт.</td>
+                    <td data-label="Оплата"><strong>{{ q_item.total_payment }} ₽</strong></td>
+                    <td>
+                        <form action="{% url 'complete_product_item' q_item.id %}" method="post" style="margin: 0; display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" 
+                                    class="btn btn-primary">
+                                Завершить
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endif %}

@@ -12,7 +12,7 @@ from django.db.models import Sum, F, Q, FloatField, ExpressionWrapper, Value, De
 from django.db.models.functions import Coalesce, Concat
 from decimal import Decimal
 from .models import Object, Product, ParsingBlacklist, ObjectStatus, ProductItem, Employee, Client, ContactPerson
-from .utils import parse_spec, decode_id
+from .utils import parse_spec, decode_id, encode_id
 
 
 def is_master(user):
@@ -372,6 +372,10 @@ def complete_product_item(request, item_id):
     else:
         messages.info(request, 'Этот экземпляр уже завершён')
 
+    referer_url = request.META.get('HTTP_REFERER')
+    if referer_url:
+        return redirect(referer_url)
+
     if is_master_user:
         return redirect('object_detail', hashed_id=redirect_hashid)
     else:
@@ -661,13 +665,13 @@ def workers_stats(request):
         next_year = selected_year
         next_month = selected_month + 1
 
-    monthly_stats = ProductItem.objects.filter(
+    monthly_stats_qs = ProductItem.objects.filter(
         status=ProductItem.StatusChoices.COMPLETED,
         end_time__year=selected_year,
         end_time__month=selected_month
     ).values(
         'employee__id',
-        'employee__name'
+        'employee__name',
     ).annotate(
         total_quantity=Sum('quantity'),
         total_earned=Sum(
@@ -677,6 +681,11 @@ def workers_stats(request):
             )
         )
     ).order_by('-total_earned')
+
+    monthly_stats = list(monthly_stats_qs)
+    for stat in monthly_stats:
+        if stat['employee__id']:
+            stat['employee__hashid'] = encode_id(stat['employee__id'])
 
     total_month_payout = sum(
         item['total_earned'] or 0 for item in monthly_stats)
@@ -776,6 +785,83 @@ def deactivate_worker(request, employee_id):
             request, f'У работника "{employee.name}" нет привязанного пользователя Django.')
 
     return redirect('all_workers_stats')
+
+
+@login_required
+@user_passes_test(is_master, login_url='/')
+def worker_detail_view(request, hashed_id):
+    """Страница деталей работника со списком изделий за выбранный месяц"""
+    employee_id = decode_id(hashed_id)
+    if employee_id is None:
+        raise Http404("Работник не найден")
+
+    employee = get_object_or_404(Employee, pk=employee_id)
+    now = timezone.now()
+
+    referer_url = request.META.get('HTTP_REFERER')
+    current_path = reverse('worker_detail', kwargs={'hashed_id': hashed_id})
+    if not referer_url or current_path in referer_url:
+        back_url = reverse('all_workers_stats')
+    else:
+        back_url = referer_url
+
+    try:
+        selected_year = int(request.GET.get('year', now.year))
+        selected_month = int(request.GET.get('month', now.month))
+        if not (1 <= selected_month <= 12):
+            raise ValueError
+    except (ValueError, TypeError):
+        selected_year = now.year
+        selected_month = now.month
+
+    if selected_month == 1:
+        prev_year = selected_year - 1
+        prev_month = 12
+    else:
+        prev_year = selected_year
+        prev_month = selected_month - 1
+
+    if selected_month == 12:
+        next_year = selected_year + 1
+        next_month = 1
+    else:
+        next_year = selected_year
+        next_month = selected_month + 1
+
+    queued_items = ProductItem.objects.filter(
+        employee=employee,
+        status=ProductItem.StatusChoices.QUEUED
+    ).select_related('product', 'product__object').order_by('id')
+
+    items = ProductItem.objects.filter(
+        employee=employee,
+        start_time__year=selected_year,
+        start_time__month=selected_month
+    ).select_related('product', 'product__object').order_by('-start_time')
+
+    total_quantity = items.aggregate(total=Sum('quantity'))['total'] or 0
+    total_earned = sum(item.total_payment for item in items)
+
+    context = {
+        'employee': employee,
+        'items': items,
+        'queued_items': queued_items,
+        'total_quantity': total_quantity,
+        'total_earned': total_earned,
+        'selected_year': selected_year,
+        'selected_month': selected_month,
+        'selected_month_name': MONTH_NAMES.get(selected_month, ''),
+        'prev_year': prev_year,
+        'prev_month': prev_month,
+        'next_year': next_year,
+        'next_month': next_month,
+        'back_url': back_url,
+    }
+
+    if request.headers.get('HX-Request'):
+        return render(request, 'includes/worker_detail_partial.html', context)
+
+    return render(request, 'worker_detail.html', context)
 
 
 @login_required

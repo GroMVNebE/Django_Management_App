@@ -1,0 +1,36 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Работник: {{ employee.name }}</title>
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    <script src="{% static 'js/htmx.min.js' %}"></script>
+</head>
+<body>
+
+<div class="container">
+    <nav class="navbar">
+        <a href="{{ back_url }}" class="nav-link">← Назад</a>
+    </nav>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}error{% elif message.tags == 'info' %}info{% else %}success{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <header style="margin-bottom: 24px;">
+        <h1>Работник: {{ employee.name }}</h1>
+    </header>
+
+    <div id="worker-detail-container">
+        {% include 'includes/worker_detail_partial.html' %}
+    </div>
+</div>
+
+</body>
+</html>

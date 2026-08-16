@@ -12,7 +12,7 @@
             {% for emp in employees_stats %}
             <tr>
                 <td data-label="Работник">
-                    <strong>{{ emp.name }}</strong>
+                    <strong><a href="{{ emp.get_absolute_url }}">{{ emp.name }}</a></strong>
                 </td>
                 <td data-label="Всего изделий" style="text-align: center;">
                     {{ emp.total_quantity }} шт.

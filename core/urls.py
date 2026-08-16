@@ -33,6 +33,8 @@ urlpatterns = [
     path('master/hidden-objects/', views.hidden_objects, name='hidden_objects'),
     path('master/items-in-work/', views.items_in_work,
          name='items_in_work'),
+    path('master/workers/<str:hashed_id>/',
+         views.worker_detail_view, name='worker_detail'),
     path('employee/', views.employee_dashboard, name='employee_dashboard'),
     path('employee/item/<int:item_id>/start/',
          views.start_queued_item, name='start_queued_item'),

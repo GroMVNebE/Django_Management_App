@@ -1,6 +1,6 @@
 {% if monthly_stats %}
-    <div class="summary-card">
-        <span>Всего выплат за месяц:</span>
+    <div class="summary-card" style="font-size: 18px; margin-bottom: 6px;">
+        <span>Всего оплата за месяц:</span>
         <strong>{{ total_month_payout|floatformat:2 }} ₽</strong>
     </div>
 
@@ -16,7 +16,9 @@
             {% for stat in monthly_stats %}
             <tr>
                 <td data-label="Работник">
-                    {{ stat.employee__name|default:"Не указан" }}
+                    <a href="{% url 'worker_detail' stat.employee__hashid %}">
+                        {{ stat.employee__name }}
+                    </a>
                 </td>
                 <td data-label="Изделий" style="text-align: center;">
                     {{ stat.total_quantity }} шт.
