@@ -3,6 +3,7 @@
     <thead>
         <tr>
             <th>Номер объекта</th>
+            <th>Статус</th>
             <th>Готовность</th>
         </tr>
     </thead>
@@ -13,6 +14,13 @@
                 <a href="{{ obj.get_absolute_url }}" class="object-link">
                     {{ obj.number }}
                 </a>
+            </td>
+            <td>
+                <button type="button" 
+                        class="btn-status" 
+                        onclick="openStatusModal('{{ obj.pk }}', '{{ obj.number|escapejs }}', '{{ obj.status.id|default:'' }}')">
+                    {{ obj.status.title|default:"Указать статус" }}
+                </button>
             </td>
             <td>
                 <div class="progress-container">

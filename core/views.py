@@ -61,6 +61,27 @@ def index(request):
 
 @login_required
 @user_passes_test(is_master, login_url='/')
+@require_POST
+def update_object_status_view(request, object_id):
+    """Изменение статуса объекта"""
+    obj = get_object_or_404(Object, pk=object_id)
+    status_id = request.POST.get('status_id')
+
+    if status_id:
+        new_status = get_object_or_404(ObjectStatus, pk=status_id)
+        obj.status = new_status
+        messages.success(
+            request, f'Статус объекта № {obj.number} изменён на "{new_status.title}"')
+    else:
+        obj.status = None
+        messages.info(request, f'Статус объекта № {obj.number} сброшен')
+
+    obj.save()
+    return redirect('master_dashboard')
+
+
+@login_required
+@user_passes_test(is_master, login_url='/')
 def master_dashboard(request):
     """Главная страница для мастера со списком всех объектов"""
     query = request.GET.get('q', '').strip()
@@ -74,7 +95,7 @@ def master_dashboard(request):
             ),
             Value(0.0)
         )
-    ).filter(is_hidden=False).select_related('client')
+    ).filter(is_hidden=False).select_related('client', 'status')
     if query:
         objects_list = objects_list.filter(
             Q(number__icontains=query) |
@@ -105,6 +126,7 @@ def master_dashboard(request):
     context = {
         'objects': objects_list,
         'search_query': query,
+        'all_statuses': ObjectStatus.objects.all(),
     }
     if request.headers.get('HX-Request'):
         return render(request, 'includes/objects_table_partial.html', context)
@@ -171,7 +193,7 @@ def import_objects_view(request):
         else:
             object = Object.objects.create(number=object_number)
             in_queue_status = ObjectStatus.objects.get(title="Приостановлен")
-            object.status.add(in_queue_status)
+            object.status = in_queue_status
         product_number = '1'
         number_len = len(str(len(products)))
         for product in products:
@@ -412,15 +434,14 @@ def create_empty_object_view(request):
         messages.error(request, 'Номер объекта обязателен для заполнения')
         return redirect('master_dashboard')
 
-    obj = Object.objects.create(
-        number=number,
-        title=title
-    )
-
     in_queue_status = ObjectStatus.objects.filter(
         title="Приостановлен").first()
-    if in_queue_status:
-        obj.status.add(in_queue_status)
+
+    obj = Object.objects.create(
+        number=number,
+        title=title,
+        status=in_queue_status
+    )
 
     messages.success(request, f'Пустой объект № {obj.number} успешно создан!')
     return redirect('master_dashboard')
@@ -462,11 +483,11 @@ def object_detail_view(request, hashed_id):
 
     has_product_items = ProductItem.objects.filter(
         product__object=obj).exists()
-    is_in_work = obj.status.filter(title="В сборке").exists()
+    is_in_work = obj.status and obj.status.title == "В сборке"
 
-    employees = Employee.objects.all()
+    employees= Employee.objects.all()
 
-    context = {
+    context= {
         'object': obj,
         'products': products,
         'has_product_items': has_product_items,
@@ -481,8 +502,8 @@ def object_detail_view(request, hashed_id):
     return render(request, 'object_detail.html', context)
 
 
-@login_required
-@user_passes_test(is_master, login_url='/')
+@ login_required
+@ user_passes_test(is_master, login_url='/')
 def object_extra_detail_view(request, hashed_id):
     """Страница с подробной информацией об объекте"""
     object_id = decode_id(hashed_id)
@@ -492,50 +513,44 @@ def object_extra_detail_view(request, hashed_id):
     obj = get_object_or_404(
         Object.objects.select_related('client').prefetch_related(
             'client__contacts', 'status'),
-        pk=object_id
+        pk = object_id
     )
 
     if request.method == 'POST':
-        action = request.POST.get('action')
+        action= request.POST.get('action')
 
         if action == 'edit_object':
-            title = request.POST.get('title', '').strip()
-            address = request.POST.get('address', '').strip()
-            description = request.POST.get('description', '').strip()
-            status_ids = request.POST.getlist('statuses')
+            title= request.POST.get('title', '').strip()
+            address= request.POST.get('address', '').strip()
+            description= request.POST.get('description', '').strip()
 
-            obj.title = title
-            obj.address = address
-            obj.description = description
+            obj.title= title
+            obj.address= address
+            obj.description= description
             obj.save()
-
-            if status_ids:
-                obj.status.set(status_ids)
-            else:
-                obj.status.clear()
 
             messages.success(request, "Информация об объекте обновлена")
 
         elif action == 'select_client':
-            client_id = request.POST.get('client_id')
+            client_id= request.POST.get('client_id')
             if client_id:
-                client = get_object_or_404(Client, pk=client_id)
-                obj.client = client
+                client= get_object_or_404(Client, pk=client_id)
+                obj.client= client
                 messages.success(
                     request, f"Заказчик «{client.title}» успешно привязан")
             else:
-                obj.client = None
+                obj.client= None
                 messages.info(request, "Заказчик отвязан от объекта")
             obj.save()
 
         elif action == 'create_client':
-            title = request.POST.get('title', '').strip()
-            description = request.POST.get('description', '').strip()
+            title= request.POST.get('title', '').strip()
+            description= request.POST.get('description', '').strip()
 
             if title:
-                new_client = Client.objects.create(
-                    title=title,
-                    description=description
+                new_client= Client.objects.create(
+                    title = title,
+                    description = description
                 )
                 obj.client = new_client
                 obj.save()

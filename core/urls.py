@@ -11,6 +11,8 @@ urlpatterns = [
          views.parsing_blacklist, name='parsing_blacklist'),
     path('master/object/<str:hashed_id>/',
          views.object_detail_view, name='object_detail'),
+    path('master/object/<int:object_id>/update-status/',
+         views.update_object_status_view, name='update_object_status'),
     path('master/object_extra/<str:hashed_id>/',
          views.object_extra_detail_view, name='object_extra_detail'),
     path('master/object/<int:object_id>/toggle-status/',

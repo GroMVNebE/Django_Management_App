@@ -56,10 +56,12 @@ class Object(models.Model):
         max_length=16,
         verbose_name="Номер (пр. 1234-56)"
     )
-    status = models.ManyToManyField(
+    status = models.ForeignKey(
         ObjectStatus,
-        related_name='linked_objects',
+        on_delete=models.SET_NULL,
+        null=True,
         blank=True,
+        related_name='linked_objects',
         verbose_name="Состояние объекта"
     )
     is_hidden = models.BooleanField(default=False, verbose_name="Скрыт")

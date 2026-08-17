@@ -13,6 +13,18 @@
                 width: 100%;
             }
         }
+        .btn-status {
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            padding: 4px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background-color 0.2s;
+        }
+        .btn-status:hover {
+            background: #e2e8f0;
+        }
     </style>
 </head>
 <body>
@@ -43,7 +55,7 @@
     {% endif %}
 
     <header>
-        <h1>Объекты в работе</h1>
+        <h1>Объекты</h1>
         <button type="button" class="btn btn-primary" onclick="openCreateModal()">
             + Добавить пустой объект
         </button>
@@ -88,6 +100,27 @@
             </form>
         </div>
     </div>
+
+    <div class="modal" id="changeStatusModal">
+        <div class="modal-content">
+            <h2 id="statusModalTitle">Смена статуса объекта</h2>
+            <form id="changeStatusForm" method="post" action="">
+                {% csrf_token %}
+                <div style="margin-bottom: 16px;">
+                    <label for="id_status_select" style="display:block; margin-bottom: 6px;">Выберите статус:</label>
+                    <select name="status_id" id="id_status_select" class="search-input" style="width: 100%;">
+                        {% for status_item in all_statuses %}
+                            <option value="{{ status_item.id }}">{{ status_item.title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div style="text-align: right; gap: 8px; display: flex; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" onclick="closeStatusModal()">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -96,6 +129,22 @@
     }
     function closeCreateModal() {
         document.getElementById('createObjectModal').classList.remove('is-open');
+    }
+    function openStatusModal(objectId, objectNumber, currentStatusId) {
+        const modal = document.getElementById('changeStatusModal');
+        const form = document.getElementById('changeStatusForm');
+        const title = document.getElementById('statusModalTitle');
+        const select = document.getElementById('id_status_select');
+
+        form.action = `/master/object/${objectId}/update-status/`;
+        title.textContent = `Статус объекта № ${objectNumber}`;
+        select.value = currentStatusId || "";
+
+        modal.classList.add('is-open');
+    }
+
+    function closeStatusModal() {
+        document.getElementById('changeStatusModal').classList.remove('is-open');
     }
     document.addEventListener('DOMContentLoaded', function() {
         const burgerBtn = document.getElementById('burgerBtn');

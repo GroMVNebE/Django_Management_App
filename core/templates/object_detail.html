@@ -176,6 +176,22 @@
     function closeAssignModal() {
         assignModal.close();
     }
+
+    let savedTableScrollTop = 0;
+
+    document.body.addEventListener('htmx:beforeSwap', function (evt) {
+        const tableContainer = document.querySelector('.table-container');
+        if (tableContainer) {
+            savedTableScrollTop = tableContainer.scrollTop;
+        }
+    });
+
+    document.body.addEventListener('htmx:afterSwap', function (evt) {
+        const tableContainer = document.querySelector('.table-container');
+        if (tableContainer) {
+            tableContainer.scrollTop = savedTableScrollTop;
+        }
+    });
 </script>
 
 </body>

@@ -138,19 +138,6 @@
                 <p style="margin: 4px 0 0 0; word-break: break-word;">{{ object.title|default:"Не указано" }}</p>
             </div>
 
-            <div>
-                <strong>Текущие статусы:</strong>
-                <div style="margin-top: 6px; display: flex; gap: 6px; flex-wrap: wrap;">
-                    {% for status in statuses %}
-                        <span class="badge" style="background-color: #eff6ff; color: #2563eb; padding: 4px 10px; border-radius: 6px; font-weight: 700; border: 1px solid #dbeafe;">
-                            {{ status.title }}
-                        </span>
-                    {% empty %}
-                        <span style="color: #94a3b8;">Статусы не назначены</span>
-                    {% endfor %}
-                </div>
-            </div>
-
             <div style="grid-column: 1 / -1;">
                 <strong>Адрес:</strong>
                 <p style="margin: 4px 0 0 0; word-break: break-word;">{{ object.address|default:"Адрес не указан" }}</p>
@@ -260,20 +247,6 @@
         <div class="form-group">
             <label>Адрес:</label>
             <textarea name="address" class="form-control" rows="2" style="resize: vertical;">{{ object.address|default:'' }}</textarea>
-        </div>
-
-        <div class="form-group">
-            <label>Статусы объекта:</label>
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; max-height: 160px; overflow-y: auto;">
-                {% for st in all_statuses %}
-                <label style="display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; text-transform: none;">
-                    <input type="checkbox" name="statuses" value="{{ st.id }}" 
-                           {% if st.id in current_status_ids %}checked{% endif %} 
-                           style="width: 18px; height: 18px; cursor: pointer;">
-                    {{ st.title }}
-                </label>
-                {% endfor %}
-            </div>
         </div>
 
         <div class="form-group">

@@ -1,82 +1,149 @@
 <style>
-    .quantity-col {
-        width: 10%;
+    .table-container {
+        max-height: 75vh;
+        overflow-y: auto;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        background-color: #ffffff;
     }
-    .payment-col {
-        width: 15%;
+
+    .unified-items-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: 16px;
     }
-    .worker-col {
-        width: 20%;
+
+    .unified-items-table th {
+        position: sticky;
+        top: 0;
+        background-color: #f8fafc;
+        color: #64748b;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 14px 16px;
+        border-bottom: 2px solid #e2e8f0;
+        z-index: 10;
+        text-align: left;
+    }
+
+    .unified-items-table td {
+        padding: 12px 16px;
+        border-bottom: 1px solid #f1f5f9;
+        vertical-align: middle;
+        color: #334155;
+    }
+
+    .product-row {
+        background-color: #f8fafc;
+        font-weight: 600;
+    }
+
+    .product-row td {
+        border-top: 1px solid #cbd5e1;
+        border-bottom: 1px solid #cbd5e1;
+        color: #0f172a;
+    }
+
+    .item-row {
+        background-color: #ffffff;
+    }
+
+    .item-row:hover {
+        background-color: #f1f5f9;
+    }
+
+    .item-indent {
+        display: inline-block;
+        padding-left: 16px;
+        color: #94a3b8;
     }
 </style>
-{% if products %}
-    {% for product in products %}
-    <div class="product-card">
-        <div class="product-header">
-            <div class="product-header-top">
-                <div class="product-title">
-                    {{ product }}
-                </div>
-                {% if product.available_quantity > 0 %}
-                    <button 
-                        type="button" 
-                        class="btn btn-primary btn-sm assign-btn"
-                        onclick="openAssignModal('{{ product.id }}', '{{ product.product_number }} — {{ product.title|escapejs }}', '{{ product.available_quantity }}')"
-                    >
-                        + Назначить работника
-                    </button>
-                {% endif %}
-            </div>
-        </div>
 
-        {% if product.items.all %}
-        <table class="items-table">
+{% if products %}
+    <div class="table-container">
+        <table class="unified-items-table">
             <thead>
                 <tr>
-                    <th class="quantity-col">Кол-во</th>
-                    <th class="payment-col">Оплата</th>
-                    <th class="worker-col">Работник</th>
-                    <th>Дата начала</th>
-                    <th>Дата окончания</th>
-                    <th></th>
+                    <th style="width: 25%;">Изделие</th>
+                    <th style="width: 10%;">Кол-во</th>
+                    <th style="width: 12%;">Оплата</th>
+                    <th style="width: 18%;">Работник</th>
+                    <th style="width: 12%;">Дата начала</th>
+                    <th style="width: 12%;">Дата окончания</th>
+                    <th style="width: 11%; text-align: right;"></th>
                 </tr>
             </thead>
             <tbody>
-                {% for item in product.items.all %}
-                <tr>
-                    <td data-label="Кол-во">{{ item.quantity|floatformat:"-1" }}/{{ product.quantity|floatformat:"-1" }} шт.</td>
-                    <td data-label="Оплата">{{ item.total_payment }} ₽</td>
-                    <td data-label="Работник">
-                        <a href="{{ item.employee.get_absolute_url }}" class="object-tag">{{ item.employee }}</a>
-                    </td>
-                    <td data-label="Начало" class="date-td">
-                        {{ item.start_time|date:"d.m.Y H:i"|default:"—" }}
-                    </td>
-                    <td data-label="Окончание" class="date-td">
-                        {{ item.end_time|date:"d.m.Y H:i"|default:"—" }}
-                    </td>
-                    <td style="text-align: right;">
-                        {% if item.status != 'completed' %}
-                            <form method="post" action="{% url 'complete_product_item' item.id %}" style="display: inline-block;" class="complete-form">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-success btn-sm" title="Отметить как завершенное" onclick="return confirm('Отметить экземпляр как завершённый?');">
-                                    ✓ Завершить
+                {% for product in products %}
+                    <tr class="product-row">
+                        <td>
+                            <strong>{{ product }}</strong>
+                        </td>
+                        <td>
+                            <strong>{{ product.quantity|floatformat:"-1" }} шт.</strong>
+                        </td>
+                        <td>
+                            <strong>{{ product.payment }} ₽</strong>
+                        </td>
+                        <td>—</td>
+                        <td>—</td>
+                        <td>—</td>
+                        <td style="text-align: right;">
+                            {% if product.available_quantity > 0 %}
+                                <button 
+                                    type="button" 
+                                    class="btn btn-primary btn-sm assign-btn"
+                                    onclick="openAssignModal('{{ product.id }}', '{{ product.product_number }} — {{ product.title|escapejs }}', '{{ product.available_quantity }}')"
+                                >
+                                    + Назначить работника
                                 </button>
-                            </form>
-                        {% endif %}
-                    </td>
-                </tr>
+                            {% endif %}
+                        </td>
+                    </tr>
+
+                    {% for item in product.items.all %}
+                        <tr class="item-row">
+                            <td><strong>{{ product }}</strong></td>
+                            <td>{{ item.quantity|floatformat:"-1" }} шт.</td>
+                            <td>{{ item.total_payment|floatformat:"-2" }} ₽</td>
+                            <td>
+                                {% if item.employee %}
+                                    <a href="{{ item.employee.get_absolute_url }}" class="object-tag">
+                                        {{ item.employee }}
+                                    </a>
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                            <td class="date-td">
+                                {{ item.start_time|date:"d.m.Y H:i"|default:"—" }}
+                            </td>
+                            <td class="date-td">
+                                {{ item.end_time|date:"d.m.Y H:i"|default:"—" }}
+                            </td>
+                            <td style="text-align: right;">
+                                {% if item.status != 'completed' %}
+                                    <form method="post" action="{% url 'complete_product_item' item.id %}" style="display: inline-block;" class="complete-form">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-success btn-sm" title="Отметить как завершенное" onclick="return confirm('Отметить экземпляр как завершённый?');">
+                                            ✓ Завершить
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
                 {% endfor %}
             </tbody>
         </table>
-        {% endif %}
     </div>
-    {% endfor %}
 {% else %}
     {% if not has_any_products %}
         <div class="empty-import-box">
             <h3 style="margin-top: 0; margin-bottom: 8px; color: #334155;">В объекте пока нет изделий</h3>
-            <p style="color: #64748b; margin-bottom: 20px; font-size: 16px;"> Вы можете загрузить файл спецификации, чтобы автоматически импортировать изделия в этот объект</p>
+            <p style="color: #64748b; margin-bottom: 20px; font-size: 16px;">Вы можете загрузить файл спецификации, чтобы автоматически импортировать изделия в этот объект</p>
             
             <button type="button" class="btn btn-primary" onclick="openImportModal()">
                 Импорт изделий

@@ -21,8 +21,8 @@
 
 <div class="container">
     <div class="navbar">
-        <a href="{% url 'employee_dashboard' %}" class="nav-link">Доступные изделия</a>
-        <a href="{% url 'employee_items' %}" class="nav-link active">Изделия в работе</a>
+        <a href="{% url 'employee_dashboard' %}" class="nav-link">Доступные</a>
+        <a href="{% url 'employee_items' %}" class="nav-link active">В работе</a>
     </div>
     {% if messages %}
         {% for message in messages %}
