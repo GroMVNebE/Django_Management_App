@@ -1,9 +1,8 @@
-import json
 import time
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.contrib import messages
-from django.http import Http404, StreamingHttpResponse
+from django.http import Http404, JsonResponse
 from django.utils import timezone
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -38,32 +37,21 @@ def send_desktop_notification(title, message):
 
 
 @login_required
-def notification_events_stream(request):
-    """
-    Представление, которое держит постоянное SSE-соединение с браузером.
-    Браузер подключается к нему и ждет новых данных
-    """
-    def event_stream():
-        last_check = time.time()
-        while True:
-            new_events = [
-                e for e in NOTIFICATIONS_QUEUE if e['timestamp'] > last_check]
-            if new_events:
-                last_check = time.time()
-                for event in new_events:
-                    payload = json.dumps({
-                        'title': event['title'],
-                        'message': event['message']
-                    })
-                    yield f"data: {payload}\n\n"
+def check_notifications_view(request):
+    """Отправка уведомлений через AJAX"""
+    last_check = request.session.get(
+        'last_notification_check', time.time() - 6)
+    current_time = time.time()
 
-            time.sleep(2)
+    new_events = [
+        {'title': e['title'], 'message': e['message']}
+        for e in NOTIFICATIONS_QUEUE
+        if e['timestamp'] > last_check
+    ]
 
-    response = StreamingHttpResponse(
-        event_stream(), content_type='text/event-stream')
-    response['Cache-Control'] = 'no-cache'
-    response['X-Accel-Buffering'] = 'no'
-    return response
+    request.session['last_notification_check'] = current_time
+
+    return JsonResponse({'notifications': new_events})
 
 
 def login_view(request):

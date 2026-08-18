@@ -29,6 +29,11 @@ DEBUG = os.environ.get('DEBUG', '') == 'True'
 
 ALLOWED_HOSTS = [os.environ.get('LOCAL_IP', ''), '127.0.0.1', 'localhost']
 
+INTERNAL_IPS = [
+    "127.0.0.1",
+    "localhost",
+]
+
 
 # Application definition
 
@@ -40,11 +45,13 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'core.apps.CoreConfig',
+    'debug_toolbar' if DEBUG else ''
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware' if DEBUG else '',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',

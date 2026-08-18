@@ -1,27 +1,23 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    if (!("Notification" in window)) {
-        return;
-    }
-
-    if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+    if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
         Notification.requestPermission();
     }
 
-    const eventSource = new EventSource("{% url 'notification_events' %}");
-
-    eventSource.onmessage = function (event) {
-        const data = JSON.parse(event.data);
-
-        if (Notification.permission === "granted") {
-            const notification = new Notification(data.title, {
-                body: data.message,
-            });
-
-            notification.onclick = function () {
-                window.focus();
-            };
-        }
-    };
+    function fetchNotifications() {
+        fetch("{% url 'check_notifications' %}")
+            .then(response => response.json())
+            .then(data => {
+                if (data.notifications && data.notifications.length > 0) {
+                    data.notifications.forEach(item => {
+                        if ("Notification" in window && Notification.permission === "granted") {
+                            new Notification(item.title, { body: item.message });
+                        }
+                    });
+                }
+            })
+            .catch(err => console.error("Ошибка получения уведомлений:", err));
+    }
+    setInterval(fetchNotifications, 5000);
 });
 </script>
