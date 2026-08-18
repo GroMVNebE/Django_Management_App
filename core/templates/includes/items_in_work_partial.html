@@ -1,41 +1,64 @@
+<style>
+    td {
+        padding: 8px;
+    }
+</style>
+
 <div class="section-header">
     <h2>В процессе изготовления</h2>
     <span class="badge-count">{{ in_progress_items.count }}</span>
 </div>
 
 {% if in_progress_items %}
-    <div class="items-list">
-        {% for item in in_progress_items %}
-        <div class="item-card in-progress">
-            <div class="item-info">
-                <a href="{% url 'object_detail' item.product.object.hashid %}" class="object-tag">
-                    Объект № {{ item.product.object.number }}
-                </a>
-                <h3 class="product-title">
-                    {{ item.product.product_number }} — {{ item.product.title }}
-                    {% if item.product.part_name %}({{ item.product.part_name }}){% endif %}
-                </h3>
-                <div class="meta-info">
-                    <span>Количество: <strong>{{ item.quantity }} шт.</strong></span>
-                    <span class="divider">|</span>
-                    <span>Работник: 
-                        <a href="{{ item.employee.get_absolute_url }}" class="object-tag">{{ item.employee }}</a>
-                    </span>
-                    <span class="divider">|</span>
-                    <span>Начало: {{ item.start_time|date:"d.m.Y H:i"|default:"—" }}</span>
-                </div>
-            </div>
-
-            <div class="card-actions">
-                <form method="post" action="{% url 'complete_product_item' item.id %}" style="margin: 0;">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-success" onclick="return confirm('Отметить изделие как завершённое?');">
-                        ✓ Завершить
-                    </button>
-                </form>
-            </div>
-        </div>
-        {% endfor %}
+    <div class="table-container">
+        <table class="unified-items-table">
+            <thead>
+                <tr>
+                    <th style="width: 15%;">Объект</th>
+                    <th style="width: 25%;">Название</th>
+                    <th style="width: 10%;">Кол-во</th>
+                    <th style="width: 15%;">Работник</th>
+                    <th style="width: 10%;">Оплата</th>
+                    <th style="width: 10%;">Начало</th>
+                    <th style="width: 10%; text-align: right;"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in in_progress_items %}
+                    <tr class="item-row">
+                        <td>
+                            <a href="{% url 'object_detail' item.product.object.hashid %}" class="object-tag">
+                                Объект № {{ item.product.object.number }}
+                            </a>
+                        </td>
+                        <td>
+                            <strong>{{ item.product.product_number }} — {{ item.product.title }}</strong>
+                            {% if item.product.part_name %}
+                                <br>({{ item.product.part_name }})
+                            {% endif %}
+                        </td>
+                        <td>{{ item.quantity|floatformat:"-1" }} шт.</td>
+                        <td>
+                            <a href="{{ item.employee.get_absolute_url }}" class="object-tag">
+                                {{ item.employee }}
+                            </a>
+                        </td>
+                        <td>{{ item.total_payment|floatformat:"-2" }} ₽</td>
+                        <td class="date-td">
+                            {{ item.start_time|date:"d.m.Y H:i"|default:"—" }}
+                        </td>
+                        <td style="text-align: right;">
+                            <form method="post" action="{% url 'complete_product_item' item.id %}" style="display: inline-block;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-success btn-sm" title="Завершить" onclick="return confirm('Отметить изделие как завершённое?');">
+                                    ✓ Завершить
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 {% else %}
     <div class="empty-state">Нет изделий в процессе изготовления</div>
@@ -47,36 +70,51 @@
 </div>
 
 {% if queued_items %}
-    <div class="items-list">
-        {% for item in queued_items %}
-        <div class="item-card queued">
-            <div class="item-info">
-                <a href="{% url 'object_detail' item.product.object.hashid %}" class="object-tag">
-                    Объект № {{ item.product.object.number }}
-                </a>
-                <h3 class="product-title">
-                    {{ item.product.product_number }} — {{ item.product.title }}
-                    {% if item.product.part_name %}({{ item.product.part_name }}){% endif %}
-                </h3>
-                <div class="meta-info">
-                    <span>Количество: <strong>{{ item.quantity }} шт.</strong></span>
-                    <span class="divider">|</span>
-                    <span>Назначен: 
-                        <a href="{{ item.employee.get_absolute_url }}" class="object-tag">{{ item.employee }}</a>
-                    </span>
-                </div>
-            </div>
-
-            <div class="card-actions">
-                <form method="post" action="{% url 'complete_product_item' item.id %}" style="margin: 0;">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-success" onclick="return confirm('Отметить изделие как завершённое?');">
-                        ✓ Завершить
-                    </button>
-                </form>
-            </div>
-        </div>
-        {% endfor %}
+    <div class="table-container">
+        <table class="unified-items-table">
+            <thead>
+                <tr>
+                    <th style="width: 15%;">Объект</th>
+                    <th style="width: 30%;">Название</th>
+                    <th style="width: 10%;">Кол-во</th>
+                    <th style="width: 20%;">Работник</th>
+                    <th style="width: 15%;">Оплата</th>
+                    <th style="width: 10%; text-align: right;"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in queued_items %}
+                    <tr class="item-row">
+                        <td>
+                            <a href="{% url 'object_detail' item.product.object.hashid %}" class="object-tag">
+                                Объект № {{ item.product.object.number }}
+                            </a>
+                        </td>
+                        <td>
+                            <strong>{{ item.product.product_number }} — {{ item.product.title }}</strong>
+                            {% if item.product.part_name %}
+                                <br>({{ item.product.part_name }})
+                            {% endif %}
+                        </td>
+                        <td>{{ item.quantity|floatformat:"-1" }} шт.</td>
+                        <td>
+                            <a href="{{ item.employee.get_absolute_url }}" class="object-tag">
+                                {{ item.employee }}
+                            </a>
+                        </td>
+                        <td>{{ item.total_payment|floatformat:"-2" }} ₽</td>
+                        <td style="text-align: right;">
+                            <form method="post" action="{% url 'complete_product_item' item.id %}" style="display: inline-block;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-success btn-sm" title="Завершить" onclick="return confirm('Отметить изделие как завершённое?');">
+                                    ✓ Завершить
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 {% else %}
     <div class="empty-state">Очередь пуста</div>

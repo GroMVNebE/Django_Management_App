@@ -14,19 +14,9 @@
             color: #64748b;
             margin-left: 8px;
         }
-
-        .payout-amount {
-            font-size: 18px;
-            font-weight: 800;
-            color: #16a34a;
-        }
-
-        .top-badge {
-            display: inline-block;
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 700;
+        .table-wrapper {
+            max-width: 800px;
+            margin: 0 auto;
         }
     </style>
 </head>
@@ -57,29 +47,26 @@
      <header>
         <h1>Топ работников</h1>
     </header>
+    <div class="month-picker">
+        <a href="?year={{ prev_year }}&month={{ prev_month }}" class="btn-month">←</a>
+        <span class="month-title" style="margin: 0 12px;">{{ selected_month_name }} {{ selected_year }}</span>
+        <a href="?year={{ next_year }}&month={{ next_month }}" class="btn-month">→</a>
+    </div>
 
     {% if top_workers %}
     <div class="table-wrapper">
         <table>
             <thead>
                 <tr>
-                    <th style="width: auto;">Место</th>
+                    <th style="width: 35%; text-align: center;">Место</th>
                     <th>Сотрудник</th>
                 </tr>
             </thead>
             <tbody>
                 {% for worker in top_workers %}
                 <tr class="worker-row">
-                    <td>
-                        {% if forloop.counter == 1 %}
-                            <span class="top-badge">🥇</span>
-                        {% elif forloop.counter == 2 %}
-                            <span class="top-badge">🥈</span>
-                        {% elif forloop.counter == 3 %}
-                            <span class="top-badge">🥉</span>
-                        {% else %}
-                            <span class="rank-number">{{ forloop.counter }}</span>
-                        {% endif %}
+                    <td style="text-align: center;">
+                        <span class="rank-number">{{ forloop.counter }}</span>
                     </td>
                     <td>
                         <strong>{{ worker.employee__name}}</strong>

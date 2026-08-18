@@ -142,13 +142,13 @@ def items_in_work(request):
         status=ProductItem.StatusChoices.IN_PROGRESS
     ).select_related(
         'product', 'product__object', 'employee'
-    ).order_by('start_time')
+    ).order_by('product__object')
 
     queued_items = ProductItem.objects.filter(
         status=ProductItem.StatusChoices.QUEUED
     ).select_related(
         'product', 'product__object', 'employee'
-    ).order_by('id')
+    ).order_by('product__object')
 
     context = {
         'in_progress_items': in_progress_items,
@@ -434,7 +434,7 @@ def create_empty_object_view(request):
         return redirect('master_dashboard')
 
     in_queue_status = ObjectStatus.objects.filter(
-        title="В очереди").first()
+        title="Создан").first()
 
     obj = Object.objects.create(
         number=number,
@@ -877,8 +877,28 @@ def worker_detail_view(request, hashed_id):
 def top_workers_view(request):
     """Страница топа сотрудников по сумме оплаты за месяц"""
     now = timezone.now()
-    selected_year = int(now.year)
-    selected_month = int(now.month)
+    try:
+        selected_year = int(request.GET.get('year', now.year))
+        selected_month = int(request.GET.get('month', now.month))
+        if not (1 <= selected_month <= 12):
+            raise ValueError
+    except (ValueError, TypeError):
+        selected_year = now.year
+        selected_month = now.month
+
+    if selected_month == 1:
+        prev_year = selected_year - 1
+        prev_month = 12
+    else:
+        prev_year = selected_year
+        prev_month = selected_month - 1
+
+    if selected_month == 12:
+        next_year = selected_year + 1
+        next_month = 1
+    else:
+        next_year = selected_year
+        next_month = selected_month + 1
 
     top_workers = ProductItem.objects.filter(
         status=ProductItem.StatusChoices.COMPLETED,
@@ -904,6 +924,13 @@ def top_workers_view(request):
         'top_workers': top_workers,
         'is_master': is_master(request.user),
         'is_worker': is_worker(request.user),
+        'selected_year': selected_year,
+        'selected_month': selected_month,
+        'selected_month_name': MONTH_NAMES.get(selected_month, ''),
+        'prev_year': prev_year,
+        'prev_month': prev_month,
+        'next_year': next_year,
+        'next_month': next_month
     }
     return render(request, 'top_workers.html', context)
 
