@@ -66,7 +66,7 @@ class Command(BaseCommand):
                 'old_db').filter(object=obj)
             for state_inst in state_instances:
                 if state_inst.state_id in status_map:
-                    new_obj.status.add(status_map[state_inst.state_id])
+                    new_obj.status = status_map[state_inst.state_id]
 
         self.stdout.write("Перенос изделий и деталей...")
         product_map = {}
