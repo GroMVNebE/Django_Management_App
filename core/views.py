@@ -218,7 +218,7 @@ def import_objects_view(request):
         messages.success(request, 'Импорт данных успешно завершён!')
         return render(request, 'import_objects.html', context)
 
-    return render(request, 'import_objects.html')
+    return redirect('/')
 
 
 @login_required
