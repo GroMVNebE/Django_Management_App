@@ -162,7 +162,7 @@ def items_in_work(request):
 @login_required
 @user_passes_test(is_master, login_url='/')
 def import_objects_view(request):
-    """Страница импорта объектов из Excel."""
+    """Импорт изделий в объект из Excel"""
     if request.method == 'POST':
         excel_file = request.FILES.get('excel_file')
         object_id = request.POST.get('object_id')
@@ -184,16 +184,11 @@ def import_objects_view(request):
                 request, f'При парсинге файла произошла ошибка: {e}')
             return render(request, 'import_objects.html')
 
-        if object_id:
-            object = get_object_or_404(Object, pk=object_id)
-            if object.number != object_number:
-                messages.error(
-                    request, f'Номер текущего объекта ({object.number}) не совпадает с номером в спецификации ({object_number})')
-                return redirect('object_detail', hashed_id=object.hashid)
-        else:
-            object = Object.objects.create(number=object_number)
-            in_queue_status = ObjectStatus.objects.get(title="В очереди")
-            object.status = in_queue_status
+        object = get_object_or_404(Object, pk=object_id)
+        if object.number != object_number:
+            messages.error(
+                request, f'Номер текущего объекта ({object.number}) не совпадает с номером в спецификации ({object_number})')
+            return redirect('object_detail', hashed_id=object.hashid)
         product_number = '1'
         number_len = len(str(len(products)))
         for product in products:
@@ -209,14 +204,7 @@ def import_objects_view(request):
                     Product.objects.create(
                         object=object, product_number=product.number, title=product.name, part_name=part.name, quantity=1, payment=part.payment)
             product_number = str(int(product_number)+1)
-        if object_id:
-            return redirect('object_detail', hashed_id=object.hashid)
-        context = dict()
-        context['products'] = Product.objects.filter(object=object)
-        context['object'] = object
-
-        messages.success(request, 'Импорт данных успешно завершён!')
-        return render(request, 'import_objects.html', context)
+        return redirect('object_detail', hashed_id=object.hashid)
 
     return redirect('/')
 
