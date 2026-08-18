@@ -52,21 +52,21 @@ class Command(BaseCommand):
         self.stdout.write("Перенос объектов...")
         object_map = {}
         old_objects = old_models.Object.objects.using('old_db').all()
+        in_work_st = ObjectStatus.objects.get(title='В работе')
+        in_queue_st = ObjectStatus.objects.get(title='В очереди')
         for obj in old_objects:
+            state_instances = old_models.ObjectStateInstance.objects.using(
+                'old_db').filter(object=obj)
             new_obj = NewObject.objects.create(
                 number=obj.obj_number,
                 title="",
                 address="",
                 is_hidden=obj.hidden,
-                description=""
+                description="",
+                status=in_work_st if str(
+                    state_instances[0].state) == 'В сборке' else in_queue_st
             )
             object_map[obj.id] = new_obj
-
-            state_instances = old_models.ObjectStateInstance.objects.using(
-                'old_db').filter(object=obj)
-            for state_inst in state_instances:
-                if state_inst.state_id in status_map:
-                    new_obj.status = status_map[state_inst.state_id]
 
         self.stdout.write("Перенос изделий и деталей...")
         product_map = {}

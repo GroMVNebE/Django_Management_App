@@ -16,7 +16,7 @@
             {% for stat in monthly_stats %}
             <tr>
                 <td data-label="Работник">
-                    <a href="{% url 'worker_detail' stat.employee__hashid %}">
+                    <a href="{% url 'worker_detail' stat.employee__hashid %}" class="object-tag">
                         {{ stat.employee__name }}
                     </a>
                 </td>

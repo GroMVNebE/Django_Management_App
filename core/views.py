@@ -95,7 +95,7 @@ def master_dashboard(request):
             ),
             Value(0.0)
         )
-    ).filter(is_hidden=False).select_related('client', 'status')
+    ).filter(is_hidden=False).select_related('client', 'status').order_by('-id')
     if query:
         objects_list = objects_list.filter(
             Q(number__icontains=query) |
@@ -192,7 +192,7 @@ def import_objects_view(request):
                 return redirect('object_detail', hashed_id=object.hashid)
         else:
             object = Object.objects.create(number=object_number)
-            in_queue_status = ObjectStatus.objects.get(title="Приостановлен")
+            in_queue_status = ObjectStatus.objects.get(title="В очереди")
             object.status = in_queue_status
         product_number = '1'
         number_len = len(str(len(products)))
@@ -267,17 +267,16 @@ def toggle_object_status_view(request, object_id):
     """Переключение статуса объекта между 'В работе' и 'В очереди'"""
     obj = get_object_or_404(Object, pk=object_id)
 
-    in_work_status = ObjectStatus.objects.get(title="В сборке")
-    in_queue_status = ObjectStatus.objects.get(title="Приостановлен")
+    in_work_status = ObjectStatus.objects.get(title="В работе")
+    in_queue_status = ObjectStatus.objects.get(title="В очереди")
 
-    if in_work_status in obj.status.all():
-        obj.status.remove(in_work_status)
-        obj.status.add(in_queue_status)
+    if in_work_status == obj.status:
+        obj.status = in_queue_status
         messages.info(request, f'Объект № {obj} переведен в очередь')
     else:
-        obj.status.remove(in_queue_status)
-        obj.status.add(in_work_status)
+        obj.status = in_work_status
         messages.success(request, f'Объект № {obj} введен в работу')
+    obj.save()
 
     return redirect('object_detail', hashed_id=obj.hashid)
 
@@ -435,7 +434,7 @@ def create_empty_object_view(request):
         return redirect('master_dashboard')
 
     in_queue_status = ObjectStatus.objects.filter(
-        title="Приостановлен").first()
+        title="В очереди").first()
 
     obj = Object.objects.create(
         number=number,
@@ -483,7 +482,7 @@ def object_detail_view(request, hashed_id):
 
     has_product_items = ProductItem.objects.filter(
         product__object=obj).exists()
-    is_in_work = obj.status and obj.status.title == "В сборке"
+    is_in_work = obj.status and obj.status.title == "В работе"
 
     employees = Employee.objects.all()
 
@@ -607,17 +606,12 @@ def object_extra_detail_view(request, hashed_id):
 
         return redirect('object_extra_detail', hashed_id=hashed_id)
 
-    all_statuses = ObjectStatus.objects.all()
     all_clients = Client.objects.all().order_by('title')
-    current_status_ids = obj.status.values_list('id', flat=True)
 
     context = {
         'object': obj,
         'client': obj.client,
-        'statuses': obj.status.all(),
-        'all_statuses': all_statuses,
         'all_clients': all_clients,
-        'current_status_ids': current_status_ids,
         'contacts': obj.client.contacts.all() if obj.client else [],
     }
     return render(request, 'object_extra_detail.html', context)
@@ -1001,7 +995,7 @@ def start_product_item(request, product_id):
 def employee_dashboard(request):
     """Страница рабочего: список изделий в работе и в очереди"""
     query = request.GET.get('q', '').strip()
-    in_work_objects = Object.objects.filter(status__title="В сборке")
+    in_work_objects = Object.objects.filter(status__title="В работе")
 
     available_products = Product.objects.filter(
         object__in=in_work_objects
