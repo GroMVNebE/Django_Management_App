@@ -485,9 +485,9 @@ def object_detail_view(request, hashed_id):
         product__object=obj).exists()
     is_in_work = obj.status and obj.status.title == "В сборке"
 
-    employees= Employee.objects.all()
+    employees = Employee.objects.all()
 
-    context= {
+    context = {
         'object': obj,
         'products': products,
         'has_product_items': has_product_items,
@@ -502,8 +502,8 @@ def object_detail_view(request, hashed_id):
     return render(request, 'object_detail.html', context)
 
 
-@ login_required
-@ user_passes_test(is_master, login_url='/')
+@login_required
+@user_passes_test(is_master, login_url='/')
 def object_extra_detail_view(request, hashed_id):
     """Страница с подробной информацией об объекте"""
     object_id = decode_id(hashed_id)
@@ -513,44 +513,44 @@ def object_extra_detail_view(request, hashed_id):
     obj = get_object_or_404(
         Object.objects.select_related('client').prefetch_related(
             'client__contacts', 'status'),
-        pk = object_id
+        pk=object_id
     )
 
     if request.method == 'POST':
-        action= request.POST.get('action')
+        action = request.POST.get('action')
 
         if action == 'edit_object':
-            title= request.POST.get('title', '').strip()
-            address= request.POST.get('address', '').strip()
-            description= request.POST.get('description', '').strip()
+            title = request.POST.get('title', '').strip()
+            address = request.POST.get('address', '').strip()
+            description = request.POST.get('description', '').strip()
 
-            obj.title= title
-            obj.address= address
-            obj.description= description
+            obj.title = title
+            obj.address = address
+            obj.description = description
             obj.save()
 
             messages.success(request, "Информация об объекте обновлена")
 
         elif action == 'select_client':
-            client_id= request.POST.get('client_id')
+            client_id = request.POST.get('client_id')
             if client_id:
-                client= get_object_or_404(Client, pk=client_id)
-                obj.client= client
+                client = get_object_or_404(Client, pk=client_id)
+                obj.client = client
                 messages.success(
                     request, f"Заказчик «{client.title}» успешно привязан")
             else:
-                obj.client= None
+                obj.client = None
                 messages.info(request, "Заказчик отвязан от объекта")
             obj.save()
 
         elif action == 'create_client':
-            title= request.POST.get('title', '').strip()
-            description= request.POST.get('description', '').strip()
+            title = request.POST.get('title', '').strip()
+            description = request.POST.get('description', '').strip()
 
             if title:
-                new_client= Client.objects.create(
-                    title = title,
-                    description = description
+                new_client = Client.objects.create(
+                    title=title,
+                    description=description
                 )
                 obj.client = new_client
                 obj.save()
@@ -877,6 +877,41 @@ def worker_detail_view(request, hashed_id):
         return render(request, 'includes/worker_detail_partial.html', context)
 
     return render(request, 'worker_detail.html', context)
+
+
+@login_required
+def top_workers_view(request):
+    """Страница топа сотрудников по сумме оплаты за месяц"""
+    now = timezone.now()
+    selected_year = int(now.year)
+    selected_month = int(now.month)
+
+    top_workers = ProductItem.objects.filter(
+        status=ProductItem.StatusChoices.COMPLETED,
+        end_time__year=selected_year,
+        end_time__month=selected_month
+    ).values(
+        'employee__id',
+        'employee__name',
+    ).annotate(
+        total_quantity=Sum('quantity'),
+        total_earned=Coalesce(
+            Sum(
+                ExpressionWrapper(
+                    F('quantity') * F('product__payment'),
+                    output_field=FloatField()
+                )
+            ),
+            Value(0.0)
+        )
+    ).order_by('-total_earned')
+
+    context = {
+        'top_workers': top_workers,
+        'is_master': is_master(request.user),
+        'is_worker': is_worker(request.user),
+    }
+    return render(request, 'top_workers.html', context)
 
 
 @login_required

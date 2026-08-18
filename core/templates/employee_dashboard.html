@@ -12,8 +12,9 @@
 
 <div class="container">
     <div class="navbar">
-        <a href="{% url 'employee_dashboard' %}" class="nav-link active">Доступные</a>
+        <a href="{% url 'employee_dashboard' %}" class="nav-link active">Изделия</a>
         <a href="{% url 'employee_items' %}" class="nav-link">В работе</a>
+        <a href="{% url 'top_workers' %}" class="nav-link">Топ</a>
     </div>
     {% if messages %}
         {% for message in messages %}
@@ -27,7 +28,7 @@
                name="q" 
                id="productSearchInput" 
                class="search-input" 
-               placeholder="Поиск изделий по номеру или названию"
+               placeholder="Поиск по номеру или названию"
                value="{{ search_query }}"
                hx-get="{% url 'employee_dashboard' %}"
                hx-trigger="keyup changed delay:300ms"

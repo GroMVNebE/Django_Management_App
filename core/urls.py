@@ -37,6 +37,7 @@ urlpatterns = [
          name='items_in_work'),
     path('master/workers/<str:hashed_id>/',
          views.worker_detail_view, name='worker_detail'),
+    path('top-workers/', views.top_workers_view, name='top_workers'),
     path('employee/', views.employee_dashboard, name='employee_dashboard'),
     path('employee/item/<int:item_id>/start/',
          views.start_queued_item, name='start_queued_item'),

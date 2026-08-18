@@ -1,0 +1,97 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Топ работников</title>
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    <script src="{% static 'js/htmx.min.js' %}"></script>
+    <style>
+        .rank-number {
+            font-size: 18px;
+            font-weight: 700;
+            color: #64748b;
+            margin-left: 8px;
+        }
+
+        .payout-amount {
+            font-size: 18px;
+            font-weight: 800;
+            color: #16a34a;
+        }
+
+        .top-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <nav class="navbar">
+        {% if is_master %}
+        <button type="button" class="burger-btn" id="burgerBtn" aria-label="Открыть меню">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+
+        <div class="nav-links" id="navLinks">
+            <a href="{% url 'master_dashboard' %}" class="nav-link">Объекты</a>
+            <a href="{% url 'items_in_work' %}" class="nav-link">Изделия в работе</a>
+            <a href="{% url 'workers_stats' %}" class="nav-link">Работники</a>
+            <a href="{% url 'hidden_objects' %}" class="nav-link">Скрытые объекты</a>
+            <a href="{% url 'import_objects' %}" class="nav-link">Импорт объектов</a>
+            <a href="{% url 'top_workers' %}" class="nav-link active">Топ работников</a>
+        </div>
+        {% elif is_worker %}
+            <a href="{% url 'employee_dashboard' %}" class="nav-link">Изделия</a>
+            <a href="{% url 'employee_items' %}" class="nav-link">В работе</a>
+            <a href="{% url 'top_workers' %}" class="nav-link active">Топ</a>
+        {% endif %}
+    </nav>
+     <header>
+        <h1>Топ работников</h1>
+    </header>
+
+    {% if top_workers %}
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: auto;">Место</th>
+                    <th>Сотрудник</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for worker in top_workers %}
+                <tr class="worker-row">
+                    <td>
+                        {% if forloop.counter == 1 %}
+                            <span class="top-badge">🥇</span>
+                        {% elif forloop.counter == 2 %}
+                            <span class="top-badge">🥈</span>
+                        {% elif forloop.counter == 3 %}
+                            <span class="top-badge">🥉</span>
+                        {% else %}
+                            <span class="rank-number">{{ forloop.counter }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <strong>{{ worker.employee__name}}</strong>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>За выбранный месяц нет данных о завершённых изделиях.</p>
+    </div>
+    {% endif %}
+</div>
