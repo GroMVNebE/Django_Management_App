@@ -3,6 +3,8 @@ from . import views
 
 urlpatterns = [
     path('', views.index, name='index'),
+    path('events/notifications/', views.notification_events_stream,
+         name='notification_events'),
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('master', views.master_dashboard, name='master_dashboard'),

@@ -393,21 +393,21 @@
 </dialog>
 
 <script>
-function openEditContactModal(id, fullName, phones, email, description) {
-    document.getElementById('edit_contact_id').value = id;
-    document.getElementById('edit_contact_full_name').value = fullName;
-    document.getElementById('edit_contact_phone_numbers').value = phones;
-    document.getElementById('edit_contact_email').value = email;
-    document.getElementById('edit_contact_description').value = description;
-    document.getElementById('editContactModal').showModal();
-}
+    function openEditContactModal(id, fullName, phones, email, description) {
+        document.getElementById('edit_contact_id').value = id;
+        document.getElementById('edit_contact_full_name').value = fullName;
+        document.getElementById('edit_contact_phone_numbers').value = phones;
+        document.getElementById('edit_contact_email').value = email;
+        document.getElementById('edit_contact_description').value = description;
+        document.getElementById('editContactModal').showModal();
+    }
 
-function openDeleteContactModal(id, fullName) {
-    document.getElementById('delete_contact_id').value = id;
-    document.getElementById('delete_contact_name').textContent = fullName;
-    document.getElementById('deleteContactModal').showModal();
-}
+    function openDeleteContactModal(id, fullName) {
+        document.getElementById('delete_contact_id').value = id;
+        document.getElementById('delete_contact_name').textContent = fullName;
+        document.getElementById('deleteContactModal').showModal();
+    }
 </script>
-
+{% include 'notification.html' %}
 </body>
 </html>

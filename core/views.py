@@ -1,7 +1,9 @@
+import json
+import time
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.contrib import messages
-from django.http import Http404
+from django.http import Http404, StreamingHttpResponse
 from django.utils import timezone
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -21,6 +23,47 @@ def is_master(user):
 
 def is_worker(user):
     return user.groups.filter(name='worker').exists()
+
+
+NOTIFICATIONS_QUEUE = []
+
+
+def send_desktop_notification(title, message):
+    """Вспомогательная функция для добавления уведомления в очередь"""
+    NOTIFICATIONS_QUEUE.append({
+        'title': title,
+        'message': message,
+        'timestamp': time.time()
+    })
+
+
+@login_required
+def notification_events_stream(request):
+    """
+    Представление, которое держит постоянное SSE-соединение с браузером.
+    Браузер подключается к нему и ждет новых данных
+    """
+    def event_stream():
+        last_check = time.time()
+        while True:
+            new_events = [
+                e for e in NOTIFICATIONS_QUEUE if e['timestamp'] > last_check]
+            if new_events:
+                last_check = time.time()
+                for event in new_events:
+                    payload = json.dumps({
+                        'title': event['title'],
+                        'message': event['message']
+                    })
+                    yield f"data: {payload}\n\n"
+
+            time.sleep(2)
+
+    response = StreamingHttpResponse(
+        event_stream(), content_type='text/event-stream')
+    response['Cache-Control'] = 'no-cache'
+    response['X-Accel-Buffering'] = 'no'
+    return response
 
 
 def login_view(request):
@@ -70,10 +113,18 @@ def update_object_status_view(request, object_id):
     if status_id:
         new_status = get_object_or_404(ObjectStatus, pk=status_id)
         obj.status = new_status
+        send_desktop_notification(
+            title=f"Изменен статус объекта № {obj.number}",
+            message=f"Новый статус: \"{new_status.title}\""
+        )
         messages.success(
             request, f'Статус объекта № {obj.number} изменён на "{new_status.title}"')
     else:
         obj.status = None
+        send_desktop_notification(
+            title=f"Сброшен статус объекта № {obj.number}",
+            message="Статус объекта был сброшен"
+        )
         messages.info(request, f'Статус объекта № {obj.number} сброшен')
 
     obj.save()

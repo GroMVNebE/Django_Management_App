@@ -80,4 +80,8 @@
         <p>За выбранный месяц нет данных о завершённых изделиях.</p>
     </div>
     {% endif %}
+
+{% if is_master %}
+{% include 'notification.html' %}
+{% endif %}
 </div>
