@@ -77,12 +77,13 @@
             </thead>
             <tbody>
                 {% for product in products %}
+                    {% if product.available_quantity > 0 %}
                     <tr class="product-row">
                         <td>
                             <strong>{{ product }}</strong>
                         </td>
                         <td>
-                            <strong>{{ product.quantity|floatformat:"-1" }} шт.</strong>
+                            <strong>{{ product.available_quantity|floatformat:"-1" }} шт.</strong>
                         </td>
                         <td>
                             <strong>{{ product.payment }} ₽</strong>
@@ -91,7 +92,6 @@
                         <td>—</td>
                         <td>—</td>
                         <td style="text-align: right;">
-                            {% if product.available_quantity > 0 %}
                                 <button 
                                     type="button" 
                                     class="btn btn-primary btn-sm assign-btn"
@@ -99,10 +99,9 @@
                                 >
                                     + Назначить работника
                                 </button>
-                            {% endif %}
                         </td>
                     </tr>
-
+                    {% endif %}
                     {% for item in product.items.all %}
                         <tr class="item-row">
                             <td><strong>{{ product }}</strong></td>

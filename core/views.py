@@ -205,14 +205,15 @@ def import_objects_view(request):
     if request.method == 'POST':
         excel_file = request.FILES.get('excel_file')
         object_id = request.POST.get('object_id')
+        object = get_object_or_404(Object, pk=object_id)
 
         if not excel_file:
             messages.error(request, 'Пожалуйста, выберите файл для загрузки.')
-            return render(request, 'import_objects.html')
+            return redirect('object_detail', hashed_id=object.hashid)
         if not excel_file.name.endswith(('.xlsx', '.xls', '.xlsm')):
             messages.error(
                 request, 'Неверный формат файла. Пожалуйста, загрузите файл Excel (.xlsx, .xlsm или .xls).')
-            return render(request, 'import_objects.html')
+            return redirect('object_detail', hashed_id=object.hashid)
 
         object_number = excel_file.name.split()[0]
         blacklist = [p.value for p in ParsingBlacklist.objects.all()]
@@ -221,9 +222,8 @@ def import_objects_view(request):
         except ValidationError as e:
             messages.error(
                 request, f'При парсинге файла произошла ошибка: {e}')
-            return render(request, 'import_objects.html')
+            return redirect('object_detail', hashed_id=object.hashid)
 
-        object = get_object_or_404(Object, pk=object_id)
         if object.number != object_number:
             messages.error(
                 request, f'Номер текущего объекта ({object.number}) не совпадает с номером в спецификации ({object_number})')

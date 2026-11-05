@@ -172,12 +172,15 @@ def parse_spec(spec, blacklist):
     for row in rows_generator:
         name_cell = row[NAME_COLUMN]
         name = name_cell.value
+        if name is None:
+            break
 
         fill = name_cell.fill
         is_colored = fill and fill.start_color and fill.start_color.rgb == 'FF33CCFF'
 
         amount_val = row[AMOUNT_COLUMN].value
-        amount = Decimal(amount_val if amount_val is not None else 1)
+        amount = Decimal(
+            amount_val if amount_val is not None and amount_val > 0 else 1)
 
         price_val = row[PRICE_COLUMN].value
         price = Decimal(price_val if price_val is not None else 0).quantize(
@@ -199,7 +202,7 @@ def parse_spec(spec, blacklist):
 
                 payment_val = row[PAYMENT_COLUMN].value
                 payment = Decimal(payment_val if payment_val is not None else 0).quantize(
-                    D2, rounding=ROUND_HALF_UP)
+                    D2, rounding=ROUND_HALF_UP) / amount
 
                 if amount == 1:
                     products.append(ParseableProduct(
@@ -250,10 +253,13 @@ def parse_spec(spec, blacklist):
                             parent_products.append(products[-1])
 
                 if len(parent_products) != amount:
-                    raise ValidationError(
-                        f'Количество сгенерированных наименований {name} не совпадает с заданным количеством ({len(parent_products)} != {amount})'
-                    )
-
+                    products = products[0:len(
+                        products)-len(parent_products)]
+                    parent_products = []
+                    for _ in range(int(amount)):
+                        products.append(ParseableProduct(
+                            name, price, labor_cost, payment))
+                        parent_products.append(products[-1])
             # Часть
             else:
                 current_part = ParseablePart(
